@@ -1,0 +1,23 @@
+{
+  "name": "reactnativeapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "^0.78.1"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "latest",
+    "metro-config": "^0.82.1",
+    "react-native-typescript-transformer": "^1.2.13"
+  }
+}

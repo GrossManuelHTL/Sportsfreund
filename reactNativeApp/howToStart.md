@@ -1,0 +1,1 @@
+You have to start the app by writing npm start and npm run android in another console (both in the reactNativeApp folder)
