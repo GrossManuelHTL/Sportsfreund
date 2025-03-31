@@ -12,7 +12,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "react": "18.2.0"
+    "@react-native": "^0.78.1",
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@react-native-community/cli": "latest",
