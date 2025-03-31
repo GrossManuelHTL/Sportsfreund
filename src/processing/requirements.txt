@@ -1,0 +1,9 @@
+pyaudio
+sounddevice
+pydub
+whisper
+fastapi
+uvicorn
+numpy
+opencv-python
+mediapipe
