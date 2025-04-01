@@ -1,33 +1,44 @@
 import React, { useState } from 'react';
-import { View, Button, Text, StyleSheet } from 'react-native';
+import { View, Button, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function App() {
-    const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
-    const handleStart = () => {
-        // Here you could make an API call to your backend
-        // to start a process, or just set state.
-        setIsRunning(true);
-    };
+  const handleToggle = () => {
+    setIsRunning(!isRunning);
+  };
 
-    const handleStop = () => {
-        // Similarly, you could stop something on the backend
-        setIsRunning(false);
-    };
-
-    return (
-        <View style={styles.container}>
-            <Text>{isRunning ? 'Running...' : 'Stopped'}</Text>
-            <Button title="Start" onPress={handleStart} />
-            <Button title="Stop" onPress={handleStop} />
-        </View>
-    );
+  return (
+      <View style={styles.container}>
+        <Text style={styles.statusText}>{isRunning ? 'Running...' : 'Stopped'}</Text>
+        <TouchableOpacity style={styles.bigButton} onPress={handleToggle}>
+          <Text style={styles.buttonText}>{isRunning ? 'Stop' : 'Start'}</Text>
+        </TouchableOpacity>
+      </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  statusText: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  bigButton: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#007BFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 100,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 24,
+  },
 });
