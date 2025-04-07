@@ -16,7 +16,8 @@
 
 ## Milestones
 
-1. Audio abspielen auf Raspberry
-2. Video aufnehmen und in sqlite DB speichern
-3. Video verarbeiten, Verbesserungsvoschläge
-4. React Native Handy app
+1. Track user movement
+2. Compare user input with video
+3. Give audio feedback based on comparison
+4. Add everything to box
+5. (React app/audio commands to control box)
