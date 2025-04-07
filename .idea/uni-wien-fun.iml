@@ -2,7 +2,7 @@
 <module type="WEB_MODULE" version="4">
   <component name="FacetManager">
     <facet type="Python" name="Python facet">
-      <configuration sdkName="Python 3.12 (uni-wien-fun)" />
+      <configuration sdkName="Python 3.11 virtualenv at C:\Users\mgros\Projekte\uni-wien-fun\.venv (2)" />
     </facet>
   </component>
   <component name="NewModuleRootManager">
@@ -13,7 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.11 (uni-wien-fun)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Python 3.11 virtualenv at C:\Users\mgros\Projekte\uni-wien-fun\.venv (2) interpreter library" level="application" />
   </component>
 </module>
