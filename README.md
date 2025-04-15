@@ -20,4 +20,4 @@
 2. Compare user input with video
 3. Give audio feedback based on comparison
 4. Add everything to box
-5. (React app/audio commands to control box)
+5. (React server/audio commands to control box)
