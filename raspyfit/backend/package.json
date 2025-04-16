@@ -15,7 +15,10 @@
     "better-sqlite3": "^11.9.1",
     "express": "^4.21.2",
     "mqtt": "^5.10.4",
-    "socket.io": "^4.8.1"
+    "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.22"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

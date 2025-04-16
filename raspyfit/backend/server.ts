@@ -1,11 +1,17 @@
-import express from 'express';
-const server = express();
-const port = 3000;
+import "reflect-metadata"; 
+import express from "express";
+import testRouter from "./routes/router";
+import { Database } from "./database/Database";
 
-server.get('/', (req, res) => {
-  res.send('Simulierte Raspberry Pi API');
-});
+const app = express();
+const PORT = 3000;
 
-server.listen(port, () => {
-  console.log(`Server läuft auf http://localhost:${port}`);
+app.use(express.json());
+app.use("/test", testRouter);
+
+
+Database.initialize().then(() => {
+  app.listen(PORT, () => {
+    console.log(`local server runs on http://localhost:${PORT}`);
+  });
 });
