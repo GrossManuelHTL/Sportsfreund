@@ -1,3 +1,14 @@
-mediapipe
-opencv-python
 argparse
+streamlit
+streamlit_webrtc
+keras
+notebook
+numpy
+Markdown
+ipykernel
+ipython
+mediapipe
+pillow
+opencv-python
+opencv-contrib-python
+tensorflow

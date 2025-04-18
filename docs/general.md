@@ -10,3 +10,8 @@ will get you there
 2. When you find good examples for easy sporty activities in MP4 format, feel free to create an exercise and put the videos in the samples folder
 
 3. The offical project name will _not_ be raspfit >:[
+
+4. You might find [this](https://github.com/spmallick/learnopencv/tree/master/AI-Fitness-Trainer-Using-MediaPipe-Analyzing-Squats) repo interesting
+
+
+
