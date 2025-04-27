@@ -13,10 +13,7 @@ from video.squats_processor import ProcessSquatsFrame
 from thresholds import get_thresholds_squats
 
 
-def main(ex: str, video_path: str):
-    if not os.path.exists(video_path):
-        print(f"[ERROR] File not found: {video_path}")
-        return
+def main(ex: str, video_path: str, live: bool):
     thresholds = get_thresholds_squats()
 
     match ex.lower():
@@ -52,7 +49,13 @@ def main(ex: str, video_path: str):
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         processed_frame, _ = process_frame.process(frame_rgb, pose)
-        out.write(processed_frame[..., ::-1]) 
+
+        if not live:
+            out.write(processed_frame[..., ::-1])
+        else:
+            cv2.imshow("Live Squat Analysis", processed_frame[..., ::-1])
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
         frame_count += 1
         print(f"[INFO] Processed frame: {frame_count}", end='\r')
@@ -92,7 +95,8 @@ def main(ex: str, video_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Squat Analysis Tool")
-    parser.add_argument('--ex', type=str, required=False,default="squats", help="Select exercise (squats,...)")
-    parser.add_argument('--video', type=str, required=False,default="../samples/squats.mp4", help="Select video path")
+    parser.add_argument('--ex', type=str, required=False, default="squats", help="Select exercise (squats,...)")
+    parser.add_argument('--video', type=str, required=False, default="../samples/test02.mp4", help="Select video path")
+    parser.add_argument('--live', action='store_true', help="Run live using laptop camera")
     args = parser.parse_args()
-    main(args.ex, args.video)
+    main(args.ex, args.video, args.live)
