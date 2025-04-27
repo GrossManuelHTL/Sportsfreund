@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 import cv2
+import json
+from datetime import datetime
 
 BASE_DIR = os.path.abspath(os.path.join(__file__, '../../'))
 sys.path.append(BASE_DIR)
@@ -57,6 +59,33 @@ def main(ex: str, video_path: str):
 
     cap.release()
     out.release()
+    ex = "Squats"
+
+    results = {
+        "exercise": ex,
+        "correct_reps": getattr(process_frame, 'correct_reps', 0),
+        "incorrect_reps": getattr(process_frame, 'incorrect_reps', 0),
+        "total_reps": getattr(process_frame, 'total_reps', 0),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    results_path = 'results.json'
+
+    if os.path.exists(results_path):
+        with open(results_path, 'r') as f:
+            try:
+                all_results = json.load(f)
+            except json.JSONDecodeError:
+                all_results = []
+    else:
+        all_results = []
+
+    all_results.append(results)
+
+    with open(results_path, 'w') as f:
+        json.dump(all_results, f, indent=4)
+
+    print(f"[INFO] Results saved to {results_path}")
 
     print(f"\n[INFO] Processing complete. Output saved to {output_path}")
 
