@@ -22,23 +22,29 @@ def main(ex: str, video_path: str, live: bool):
 
     pose = get_mediapipe_pose()
 
-    cap = cv2.VideoCapture(video_path)
+    if live:
+        cap = cv2.VideoCapture(0)
+    else:
+        if not os.path.exists(video_path):
+            print(f"[ERROR] File not found: {video_path}")
+            return
+        cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
         print("[ERROR] Failed to open video file.")
         return
 
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    fps = int(cap.get(cv2.CAP_PROP_FPS)) if not live else 30
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     frame_size = (width, height)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
     output_path = 'output_recorded.mp4'
-    if os.path.exists(output_path):
+    if not live and os.path.exists(output_path):
         os.remove(output_path)
 
-    out = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
+    out = None if live else cv2.VideoWriter(output_path, fourcc, fps, frame_size)
 
     frame_count = 0
 
@@ -61,36 +67,38 @@ def main(ex: str, video_path: str, live: bool):
         print(f"[INFO] Processed frame: {frame_count}", end='\r')
 
     cap.release()
-    out.release()
-    ex = "Squats"
+    if not live:
+        out.release()
+        ex = "Squats"
 
-    results = {
-        "exercise": ex,
-        "correct_reps": getattr(process_frame, 'correct_reps', 0),
-        "incorrect_reps": getattr(process_frame, 'incorrect_reps', 0),
-        "total_reps": getattr(process_frame, 'total_reps', 0),
-        "timestamp": datetime.now().isoformat()
-    }
+        results = {
+            "exercise": ex,
+            "correct_reps": getattr(process_frame, 'correct_reps', 0),
+            "incorrect_reps": getattr(process_frame, 'incorrect_reps', 0),
+            "total_reps": getattr(process_frame, 'total_reps', 0),
+            "timestamp": datetime.now().isoformat()
+        }
 
-    results_path = 'results.json'
+        results_path = 'results.json'
 
-    if os.path.exists(results_path):
-        with open(results_path, 'r') as f:
-            try:
-                all_results = json.load(f)
-            except json.JSONDecodeError:
-                all_results = []
+        if os.path.exists(results_path):
+            with open(results_path, 'r') as f:
+                try:
+                    all_results = json.load(f)
+                except json.JSONDecodeError:
+                    all_results = []
+        else:
+            all_results = []
+
+        all_results.append(results)
+
+        with open(results_path, 'w') as f:
+            json.dump(all_results, f, indent=4)
+
+        print(f"[INFO] Results saved to {results_path}")
+        print(f"\n[INFO] Processing complete. Output saved to {output_path}")
     else:
-        all_results = []
-
-    all_results.append(results)
-
-    with open(results_path, 'w') as f:
-        json.dump(all_results, f, indent=4)
-
-    print(f"[INFO] Results saved to {results_path}")
-
-    print(f"\n[INFO] Processing complete. Output saved to {output_path}")
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
