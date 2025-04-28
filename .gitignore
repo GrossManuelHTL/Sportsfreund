@@ -258,3 +258,8 @@ dmypy.json
 cython_debug/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python
+.idea/uni-wien-fun.iml
+.idea/misc.xml
+.idea/uni-wien-fun.iml
+raspyfit/processor/src/output_recorded.mp4
+raspyfit/processor/src/utils/__init__.py
