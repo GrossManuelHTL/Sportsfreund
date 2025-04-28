@@ -2,9 +2,9 @@
 def get_thresholds_squats():
 
     _ANGLE_HIP_KNEE_VERT = {
-                            'NORMAL' : (0,  32),
-                            'TRANS'  : (35, 65),
-                            'PASS'   : (70, 95)
+                            'NORMAL' : (0,  15),
+                            'TRANS'  : (35, 60),
+                            'PASS'   : (65, 180)
                            }    
 
     thresholds = {
@@ -12,9 +12,9 @@ def get_thresholds_squats():
 
                     'HIP_THRESH'   : [10, 50],
                     'ANKLE_THRESH' : 45,
-                    'KNEE_THRESH'  : [50, 70, 95],
+                    'KNEE_THRESH'  : [50, 65, 180],
 
-                    'OFFSET_THRESH'    : 35.0,
+                    'OFFSET_THRESH'    : 50.0,
                     'INACTIVE_THRESH'  : 15.0,
 
                     'CNT_FRAME_THRESH' : 50
