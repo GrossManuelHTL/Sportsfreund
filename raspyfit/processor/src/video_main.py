@@ -103,7 +103,7 @@ def main(ex: str, video_path: str, live: bool):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Squat Analysis Tool")
     parser.add_argument('--ex', type=str, required=False, default="squats", help="Select exercise (squats,...)")
-    parser.add_argument('--video', type=str, required=False, default="../samples/test02.mp4", help="Select video path")
+    parser.add_argument('--video', type=str, required=False, default="../samples/test01.mp4", help="Select video path")
     parser.add_argument('--live', action='store_true', help="Run live using laptop camera")
     args = parser.parse_args()
     main(args.ex, args.video, args.live)
