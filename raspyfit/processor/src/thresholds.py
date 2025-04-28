@@ -22,4 +22,3 @@ def get_thresholds_squats():
                 }
 
     return thresholds
-
