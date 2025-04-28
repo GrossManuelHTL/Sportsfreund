@@ -4,6 +4,7 @@ import argparse
 import cv2
 import json
 from datetime import datetime
+import requests
 
 BASE_DIR = os.path.abspath(os.path.join(__file__, '../../'))
 sys.path.append(BASE_DIR)
@@ -71,30 +72,26 @@ def main(ex: str, video_path: str, live: bool):
         out.release()
         ex = "Squats"
 
-        results = {
-            "exercise": ex,
-            "correct_reps": getattr(process_frame, 'correct_reps', 0),
-            "incorrect_reps": getattr(process_frame, 'incorrect_reps', 0),
-            "total_reps": getattr(process_frame, 'total_reps', 0),
-            "timestamp": datetime.now().isoformat()
+        state_tracker = getattr(process_frame, 'state_tracker', {})
+        correct_reps = state_tracker.get('SQUAT_COUNT', 0)
+        incorrect_reps = state_tracker.get('IMPROPER_SQUAT', 0)
+
+        payload = {
+            "exerciseName": ex,
+            "correctReps": correct_reps,
+            "incorrectReps": incorrect_reps
         }
-        results_path = 'results.json'
 
-        if os.path.exists(results_path):
-            with open(results_path, 'r') as f:
-                try:
-                    all_results = json.load(f)
-                except json.JSONDecodeError:
-                    all_results = []
-        else:
-            all_results = []
+        try:
+            response = requests.post("http://localhost:3000/session", json=payload)
+            if response.status_code == 200:
+                print("[INFO] Session successfully saved via backend!")
+            else:
+                print(f"[ERROR] Failed to save session. Status code: {response.status_code}")
+                print(response.text)
+        except Exception as e:
+            print(f"[ERROR] Could not connect to backend: {e}")
 
-        all_results.append(results)
-
-        with open(results_path, 'w') as f:
-            json.dump(all_results, f, indent=4)
-
-        print(f"[INFO] Results saved to {results_path}")
         print(f"\n[INFO] Processing complete. Output saved to {output_path}")
     else:
         cv2.destroyAllWindows()
