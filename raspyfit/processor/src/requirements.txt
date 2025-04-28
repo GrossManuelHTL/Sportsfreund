@@ -1,10 +1,5 @@
 argparse
-streamlit
-streamlit_webrtc
-keras
-notebook
 numpy
-Markdown
 ipykernel
 ipython
 mediapipe

@@ -496,9 +496,5 @@ class ProcessSquatsFrame:
             self.state_tracker['DISPLAY_TEXT'] = np.full((5,), False)
             self.state_tracker['COUNT_FRAMES'] = np.zeros((5,), dtype=np.int64)
             self.state_tracker['start_inactive_time_front'] = time.perf_counter()
-            
-            
-            
-        return frame, play_sound
 
-                    
+        return frame, play_sound

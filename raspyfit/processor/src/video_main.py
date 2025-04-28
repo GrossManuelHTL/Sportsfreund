@@ -78,7 +78,6 @@ def main(ex: str, video_path: str, live: bool):
             "total_reps": getattr(process_frame, 'total_reps', 0),
             "timestamp": datetime.now().isoformat()
         }
-
         results_path = 'results.json'
 
         if os.path.exists(results_path):
