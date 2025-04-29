@@ -263,3 +263,4 @@ cython_debug/
 .idea/uni-wien-fun.iml
 raspyfit/processor/src/output_recorded.mp4
 raspyfit/processor/src/utils/__init__.py
+raspyfit/processor/src/output_recorded.mp4
