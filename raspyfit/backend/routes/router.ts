@@ -25,4 +25,8 @@ router.get("/exercises", async (_req, res) => {
   }
 });
 
+router.get("/session", (req, res)=>{
+  console.log("heast wos isn des");
+})
+
 export default router;
