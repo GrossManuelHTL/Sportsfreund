@@ -4,8 +4,8 @@ import { Exercise } from './Exercise.entity';
 
 @Entity('Session_Exercise')
 export class SessionExercise {
-    @PrimaryColumn({ type: 'text' })
-    sessionID!: string;
+    @PrimaryColumn({ type: 'integer' })
+    sessionID!: number;
 
     @PrimaryColumn({ type: 'integer' })
     exerciseID!: number;
@@ -18,9 +18,6 @@ export class SessionExercise {
 
     @Column({ type: 'real' })
     score!: number;
-
-    @Column({ type: 'text', nullable: true })
-    comment!: string;
 
     @Index('idx_session_id')
     @ManyToOne(() => Session, (session) => session.sessionExercises)

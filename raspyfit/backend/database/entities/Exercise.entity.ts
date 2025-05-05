@@ -15,9 +15,6 @@ export class Exercise {
   @Column({ type: 'integer', nullable: true })
   difficulty!: number;
 
-  @Column({ type: 'text', nullable: true })
-  comment!: string;
-
   @OneToMany(() => SessionExercise, (sessionExercise) => sessionExercise.exercise)
   sessionExercises!: SessionExercise[];
 }

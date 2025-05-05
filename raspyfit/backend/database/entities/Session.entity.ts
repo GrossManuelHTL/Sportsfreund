@@ -3,8 +3,8 @@ import { SessionExercise } from './SessionExercise.entity';
 
 @Entity('Session')
 export class Session {
-  @PrimaryColumn({ type: 'text' })
-  sessionID!: string;
+  @PrimaryColumn({ type: 'integer' })
+  sessionID!: number;
 
   @CreateDateColumn({ type: 'date' })
   start!: Date;
@@ -14,9 +14,6 @@ export class Session {
 
   @Column({ type: 'real', default: 0 })
   totalScore!: number;
-
-  @Column({ type: 'text', nullable: true })
-  comment!: string;
 
   @OneToMany(() => SessionExercise, (sessionExercise) => sessionExercise.session)
   sessionExercises!: SessionExercise[];

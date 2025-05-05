@@ -83,7 +83,7 @@ def main(ex: str, video_path: str, live: bool):
         }
 
         try:
-            response = requests.post("http://localhost:3000/session", json=payload)
+            response = requests.post("http://localhost:3000/raspyfit/sessions/exercise", json=payload)
             if response.status_code == 200:
                 print("[INFO] Session successfully saved via backend!")
             else:
