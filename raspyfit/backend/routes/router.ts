@@ -49,10 +49,14 @@ router.patch("/session/:id/endtime", async (_req, _res) => {
 
     if (!session) {
       _res.status(404).send("Session not found");
+      return;
     }
 
-    session!.endtime = new Date();
-    await sessionRepo.save(session!);
+    session.end = new Date();
+    if (_req.body.score !== undefined) {
+      session.totalScore = _req.body.score;
+    }
+    await sessionRepo.save(session);
 
     _res.status(200).json("endtime succesfully updated");
   } catch (error: any) {

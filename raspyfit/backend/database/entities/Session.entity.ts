@@ -1,9 +1,9 @@
-import { Entity, Column, PrimaryColumn, OneToMany, CreateDateColumn } from 'typeorm';
+import {Entity, Column, PrimaryColumn, OneToMany, CreateDateColumn, PrimaryGeneratedColumn} from 'typeorm';
 import { SessionExercise } from './SessionExercise.entity';
 
 @Entity('Session')
 export class Session {
-  @PrimaryColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   sessionID!: number;
 
   @CreateDateColumn({ type: 'date' })
