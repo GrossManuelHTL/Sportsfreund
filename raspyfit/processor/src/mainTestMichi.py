@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 
 
-BASE_DIR = os.path.abspath(os.path.join(__file__, '../../'))
+BASE_DIR = os.path.abspath(os.path.join(__file__, '../'))
 sys.path.append(BASE_DIR)
 
 from utils.utils import get_mediapipe_pose
@@ -61,10 +61,17 @@ def main(ex: str,video_path: str, live: bool):
     process_frame = None
     while cap.isOpened():
 
+        if process_frame is not None:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            processed_frame, _ = process_frame.process(frame_rgb, pose)
+
         if not live and process_frame is not None and processed_frame is not None:
             out.write(processed_frame[..., ::-1])
         else:
-            cv2.imshow("Live Squat Analysis", processed_frame[..., ::-1])
             #1 ist ein Signal als Beispiel. In dem Fall für Squats
             if cv2.waitKey(1) & 0xFF == ord('1'):
                 if doingExercise:
@@ -78,13 +85,7 @@ def main(ex: str,video_path: str, live: bool):
                     endExercise(process_frame, exercise, session_id)
                 endSession(session_id)
 
-        if process_frame is not None:
-            ret, frame = cap.read()
-            if not ret:
-                break
 
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            processed_frame, _ = process_frame.process(frame_rgb, pose)
 
         frame_count += 1
         print(f"[INFO] Processed frame: {frame_count}", end='\r')
