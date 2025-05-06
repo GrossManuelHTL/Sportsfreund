@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from utils.utils import find_angle, get_landmark_features, draw_text, draw_dotted_line
 
-
 class ProcessSquatsFrame:
     def __init__(self, thresholds, flip_frame=False):
 
