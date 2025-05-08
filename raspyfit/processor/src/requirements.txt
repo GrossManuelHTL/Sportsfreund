@@ -3,7 +3,6 @@ numpy
 ipykernel
 ipython
 mediapipe
-pillow
 opencv-python
-opencv-contrib-python
+scikit-learn
 tensorflow

@@ -1,0 +1,47 @@
+{
+  "exercise_name": "pushups",
+  "description": "Liegestütze für die Brust-, Schulter- und Armmuskulatur",
+  "video_prefix": "pushup",
+  "sequence_length": 30,
+  "model_name": "pushup_model.h5",
+  "categories": [
+    {
+      "id": "correct",
+      "name": "Korrekte Ausführung",
+      "feedback": "Perfekte Push-up-Form! Du hältst deinen Körper in einer geraden Linie."
+    },
+    {
+      "id": "hips_too_high",
+      "name": "Hüfte zu hoch",
+      "feedback": "Deine Hüfte ist zu hoch. Halte deinen Körper in einer geraden Linie von Kopf bis Fuß."
+    },
+    {
+      "id": "hips_too_low",
+      "name": "Hüfte zu tief",
+      "feedback": "Deine Hüfte hängt durch. Spanne deinen Bauch an und halte deinen Körper gerade."
+    },
+    {
+      "id": "not_deep_enough",
+      "name": "Nicht tief genug",
+      "feedback": "Du gehst nicht tief genug. Senke deinen Körper, bis deine Brust fast den Boden berührt."
+    },
+    {
+      "id": "elbow_position",
+      "name": "Falsche Ellenbogenposition",
+      "feedback": "Deine Ellenbogen sind zu weit nach außen gerichtet. Halte sie näher am Körper für eine bessere Technik."
+    }
+  ],
+  "relevant_landmarks": [
+    "NOSE",
+    "LEFT_SHOULDER",
+    "RIGHT_SHOULDER",
+    "LEFT_ELBOW",
+    "RIGHT_ELBOW",
+    "LEFT_WRIST",
+    "RIGHT_WRIST",
+    "LEFT_HIP",
+    "RIGHT_HIP",
+    "LEFT_ANKLE",
+    "RIGHT_ANKLE"
+  ]
+}
