@@ -11,12 +11,11 @@ from pose_extractor import PoseExtractor
 class ExerciseModelTrainer:
     def __init__(self, exercise_config):
         """
-        Initialisiert den Trainer für das Übungsmodell.
+        Initialises trainer for exercise model.
 
         Args:
             exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
         """
-        # Pose-Extraktor initialisieren
         self.pose_extractor = PoseExtractor(exercise_config)
 
         # Modellpfad bestimmen
@@ -26,7 +25,7 @@ class ExerciseModelTrainer:
 
     def build_model(self, input_shape, num_categories):
         """
-        Erstellt ein LSTM-Modell für die Klassifikation von Bewegungssequenzen.
+        Creates LSTM-Model for classification of pose sequences.
 
         Args:
             input_shape: Form der Eingabedaten (Sequenzlänge, Anzahl Features)
@@ -54,7 +53,7 @@ class ExerciseModelTrainer:
 
     def train_model(self, video_dir, epochs=50, batch_size=16, validation_split=0.2):
         """
-        Trainiert das Modell mit Videos aus einem Verzeichnis.
+        Trains model with videos from a directory.
 
         Args:
             video_dir: Verzeichnis mit Trainingsvideos
@@ -76,27 +75,22 @@ class ExerciseModelTrainer:
         print(f"Geladen: {len(X)} Videos")
         print(f"Kategorien: {self.pose_extractor.get_categories()}")
 
-        # Aufteilen in Trainings- und Validierungsdaten
         X_train, X_val, y_train, y_val = train_test_split(
             X, y,
             test_size=validation_split,
             random_state=42
         )
 
-        # Input Shape: (Sequenzlänge, Anzahl Features pro Frame)
         input_shape = (X_train.shape[1], X_train.shape[2])
-        num_categories = len(y[0])  # Anzahl der Kategorien aus One-Hot-Encoding
+        num_categories = len(y[0])
 
-        # Modell erstellen
         model = self.build_model(input_shape, num_categories)
 
-        # Callbacks für Training
         callbacks = [
             EarlyStopping(patience=10, restore_best_weights=True),
             ModelCheckpoint(self.model_path, save_best_only=True)
         ]
 
-        # Modell trainieren
         print("Starte Training...")
         history = model.fit(
             X_train, y_train,
@@ -106,16 +100,14 @@ class ExerciseModelTrainer:
             callbacks=callbacks
         )
 
-        # Modell speichern
         model.save(self.model_path)
         print(f"Modell gespeichert unter {self.model_path}")
 
-        # Evaluieren
         loss, accuracy = model.evaluate(X_val, y_val)
         print(f"Validierungsgenauigkeit: {accuracy * 100:.2f}%")
 
         return True
 
     def get_model_path(self):
-        """Gibt den Pfad zum gespeicherten Modell zurück"""
+        """Returns the path to the saved model."""
         return self.model_path

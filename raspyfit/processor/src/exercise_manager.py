@@ -4,16 +4,17 @@ import os
 
 class ExerciseManager:
     """
-    Verwaltet alle verfügbaren Übungen im System.
-    Ermöglicht das Hinzufügen, Entfernen und Auflisten von Übungen.
+    Manage exercises and their configurations.
+    All exercises are stored in a directory called "exercises" in the root directory.
+
     """
 
     def __init__(self, exercises_dir="exercises"):
         """
-        Initialisiert den ExerciseManager.
+        Initializes the ExerciseManager with the specified exercises directory.
 
         Args:
-            exercises_dir: Verzeichnis, in dem die Übungskonfigurationen gespeichert sind
+            exercises_dir: Directory path for the exercises. Default is "exercises" in the root directory.
         """
         self.exercises_dir = exercises_dir
 
@@ -22,10 +23,10 @@ class ExerciseManager:
 
     def get_available_exercises(self):
         """
-        Gibt eine Liste aller verfügbaren Übungen zurück.
+        Returns a list of available exercises.
 
         Returns:
-            Liste mit Übungsnamen und Beschreibungen
+            A List with dictionaries containing the exercise information.
         """
         exercises = []
 
@@ -51,13 +52,13 @@ class ExerciseManager:
 
     def get_exercise_config(self, exercise_name):
         """
-        Gibt die Konfiguration für eine bestimmte Übung zurück.
+        Returns the configuration for the specified exercise.
 
         Args:
-            exercise_id: ID der Übung (Verzeichnisname)
+            exercise_id: ID of the exercise (directory name)
 
         Returns:
-            Pfad zur Konfigurationsdatei oder None, wenn nicht gefunden
+            Path to the exercise configuration file or a dictionary with the configuration data.
         """
         config = os.path.join(self.exercises_dir, exercise_name, "config.json")
 
@@ -73,29 +74,25 @@ class ExerciseManager:
 
     def create_new_exercise(self, config_data):
         """
-        Erstellt eine neue Übung basierend auf Konfigurationsdaten.
+        Creates a new exercise with the specified configuration data.
 
         Args:
-            config_data: Dictionary mit Konfigurationsdaten
+            config_data: Dictionary with the exercise configuration data.
 
         Returns:
-            Erfolgs-Status und Fehlermeldung (falls vorhanden)
+            Success status and exercise ID if successful, otherwise error message.
         """
         if "exercise_name" not in config_data:
             return False, "Übungsname fehlt in der Konfiguration"
 
-        # ID aus dem Namen erstellen (Kleinbuchstaben, Leerzeichen durch Unterstriche ersetzen)
         exercise_id = config_data.get("id", config_data["exercise_name"].lower().replace(" ", "_"))
 
-        # Verzeichnis erstellen
         exercise_dir = os.path.join(self.exercises_dir, exercise_id)
         os.makedirs(exercise_dir, exist_ok=True)
 
-        # Videos-Verzeichnis erstellen
         videos_dir = os.path.join(exercise_dir, "videos")
         os.makedirs(videos_dir, exist_ok=True)
 
-        # Konfiguration speichern
         config_path = os.path.join(exercise_dir, "config.json")
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, indent=2)
@@ -104,39 +101,38 @@ class ExerciseManager:
 
     def delete_exercise(self, exercise_id):
         """
-        Löscht eine Übung und alle zugehörigen Dateien.
+        Deletes the specified exercise and its contents.
 
         Args:
-            exercise_id: ID der Übung
+            exercise_id: ID of the exercise to delete.
 
         Returns:
-            True bei Erfolg, False sonst
+            True -> success, False -> failure
         """
         exercise_dir = os.path.join(self.exercises_dir, exercise_id)
 
         if not os.path.exists(exercise_dir):
             return False
 
-        # Alle Dateien im Verzeichnis rekursiv löschen
+
         for root, dirs, files in os.walk(exercise_dir, topdown=False):
             for file in files:
                 os.remove(os.path.join(root, file))
             for dir in dirs:
                 os.rmdir(os.path.join(root, dir))
 
-        # Verzeichnis selbst löschen
         os.rmdir(exercise_dir)
 
         return True
 
     def get_training_videos_path(self, exercise_id):
         """
-        Gibt den Pfad zum Verzeichnis mit den Trainingsvideos zurück.
+        returns the path to the training videos directory for the specified exercise.
 
         Args:
-            exercise_id: ID der Übung
+            exercise_id: ID of the exercise.
 
         Returns:
-            Pfad zum Videos-Verzeichnis
+            path to the training videos directory.
         """
         return os.path.join(self.exercises_dir, exercise_id, "videos")

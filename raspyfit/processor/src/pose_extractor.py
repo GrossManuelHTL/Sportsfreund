@@ -8,13 +8,12 @@ import json
 class PoseExtractor:
     def __init__(self, exercise_config=None, sequence_length=30):
         """
-        Initialisiert den PoseExtractor für die Extraktion von Körperpunkten.
+        Initializes the PoseExtractor for extracting pose landmarks from videos.
 
         Args:
             exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
             sequence_length: Anzahl der Frames, die für jede Übung standardisiert werden
         """
-        # MediaPipe-Setup für Pose-Erkennung
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
             static_image_mode=False,
@@ -24,7 +23,6 @@ class PoseExtractor:
         )
         self.mp_drawing = mp.solutions.drawing_utils
 
-        # Standardeinstellungen
         self.sequence_length = sequence_length
         self.config = exercise_config
         self.relevant_landmarks = []
@@ -35,33 +33,32 @@ class PoseExtractor:
                 for landmark_name in self.config["relevant_landmarks"]
             ]
         else:
-            # Standardmäßig alle Landmarken verwenden
             self.relevant_landmarks = list(range(33))
 
             if "sequence_length" in self.config:
                 self.sequence_length = self.config["sequence_length"]
 
     def get_categories(self):
-        """Gibt die Kategorien aus der Konfiguration zurück"""
+        """Returns a list of categories from the exercise config."""
         if self.config and "categories" in self.config:
             return [cat["id"] for cat in self.config["categories"]]
         return []
 
     def get_exercise_name(self):
-        """Gibt den Namen der Übung zurück"""
+        """Returns the name of the exercise from the exercise config."""
         if self.config and "exercise_name" in self.config:
             return self.config["exercise_name"]
         return "Unbekannte Übung"
 
     def get_model_name(self):
-        """Gibt den Modellnamen aus der Konfiguration zurück"""
+        """Returns the name of the model from the exercise config. Defaults to "exercise_model.h5"."""
         if self.config and "model_name" in self.config:
             return self.config["model_name"]
         return "exercise_model.h5"
 
     def extract_pose_from_video(self, video_path, visualize=False):
         """
-        Extrahiert Körperpunkte aus einem Video.
+        Extracts pose landmarks from a video file.
 
         Args:
             video_path: Pfad zum Videofile
@@ -80,12 +77,10 @@ class PoseExtractor:
             if not ret:
                 break
 
-            # Konvertieren zu RGB für MediaPipe
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = self.pose.process(frame_rgb)
 
             if result.pose_landmarks:
-                # Extrahieren der relevanten Landmarken
                 frame_landmarks = []
                 for landmark_id in self.relevant_landmarks:
                     landmark = result.pose_landmarks.landmark[landmark_id]
@@ -93,7 +88,6 @@ class PoseExtractor:
 
                 landmarks_sequence.append(frame_landmarks)
 
-                # Zeichnen der Landmarken für Visualisierung
                 if visualize:
                     annotated_frame = frame.copy()
                     self.mp_drawing.draw_landmarks(
@@ -105,9 +99,7 @@ class PoseExtractor:
 
         cap.release()
 
-        # Normalisieren der Sequenzlänge auf self.sequence_length
         if landmarks_sequence:
-            # Interpolation, wenn weniger oder mehr Frames als benötigt
             if len(landmarks_sequence) != self.sequence_length:
                 indices = np.linspace(0, len(landmarks_sequence) - 1, self.sequence_length, dtype=int)
                 landmarks_sequence = [landmarks_sequence[i] for i in indices]
@@ -116,7 +108,7 @@ class PoseExtractor:
 
     def extract_label_from_filename(self, filename):
         """
-        Extrahiert Label-Informationen aus dem Dateinamen.
+        Extracts the label from the filename.
 
         Args:
             filename: Name der Videodatei
@@ -133,7 +125,6 @@ class PoseExtractor:
                 label[categories.index(category)] = 1
                 return label
 
-        # Fallback, falls keine Kategorie erkannt wird
         return [0] * len(categories)
 
     def load_training_data(self, video_dir):
@@ -152,11 +143,9 @@ class PoseExtractor:
         y = []
         filenames = []
 
-        # Video-Präfix aus Konfiguration
         video_prefix = self.config.get("video_prefix", "")
 
         for filename in os.listdir(video_dir):
-            # Nur Dateien mit dem richtigen Präfix und Videoformat verarbeiten
             if (not video_prefix or filename.startswith(video_prefix)) and \
                     filename.endswith(('.mp4', '.avi', '.mov')):
                 video_path = os.path.join(video_dir, filename)
