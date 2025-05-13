@@ -16,5 +16,22 @@
       "Exhale as you rise back up.",
       "Fully extend your hips at the top of the movement."
     ]
+  },
+  "push_up": {
+    "preparation_instructions": [
+      "Begin in a plank position with hands slightly wider than shoulder-width apart.",
+      "Place your palms flat on the floor, fingers pointing forward.",
+      "Keep your legs extended behind you, with weight on your toes.",
+      "Engage your core and maintain a straight line from head to heels."
+    ],
+    "execution_instructions": [
+      "Inhale as you lower your chest toward the ground by bending your elbows.",
+      "Keep your elbows at about a 45-degree angle to your body.",
+      "Lower until your chest is about 5 centimeters from the floor.",
+      "Keep your core tight and avoid letting your hips sag or pike up.",
+      "Exhale as you push through your palms to return to the starting position.",
+      "Fully extend your arms at the top without locking your elbows.",
+      "Keep your neck neutral by looking slightly ahead of your hands."
+    ]
   }
 }
