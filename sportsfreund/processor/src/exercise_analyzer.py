@@ -4,16 +4,21 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from pose_extractor import PoseExtractor
+from exercise_manager import ExerciseManager
 
 
 class ExerciseAnalyzer:
-    def __init__(self, exercise_config):
+    def __init__(self, exercise_name):
         """
         Initializes the ExerciseAnalyzer for analyzing videos of an Exercise.
 
         Args:
             exercise_config: path to the exercise configuration file or a dictionary containing the exercise configuration
         """
+
+        self.manager = ExerciseManager()
+
+        exercise_config = self.manager.get_exercise_config(exercise_name)
 
         self.pose_extractor = PoseExtractor(exercise_config)
 

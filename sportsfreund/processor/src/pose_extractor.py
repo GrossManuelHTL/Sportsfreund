@@ -24,7 +24,6 @@ class PoseExtractor:
         )
         self.mp_drawing = mp.solutions.drawing_utils
 
-        # Standardeinstellungen
         self.sequence_length = sequence_length
         self.config = exercise_config
         self.relevant_landmarks = []
@@ -35,7 +34,6 @@ class PoseExtractor:
                 for landmark_name in self.config["relevant_landmarks"]
             ]
         else:
-            # Standardmäßig alle Landmarken verwenden
             self.relevant_landmarks = list(range(33))
 
             if "sequence_length" in self.config:
@@ -155,11 +153,11 @@ class PoseExtractor:
         y = []
         filenames = []
 
-        # Video-Präfix aus Konfiguration
         video_prefix = self.config.get("video_prefix", "")
 
+        print(video_dir)
+
         for filename in os.listdir(video_dir):
-            # Nur Dateien mit dem richtigen Präfix und Videoformat verarbeiten
             if (not video_prefix or filename.startswith(video_prefix)) and \
                     filename.endswith(('.mp4', '.avi', '.mov')):
                 video_path = os.path.join(video_dir, filename)
