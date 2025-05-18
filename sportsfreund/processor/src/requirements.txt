@@ -6,3 +6,4 @@ mediapipe
 opencv-python
 scikit-learn
 tensorflow
+gtts

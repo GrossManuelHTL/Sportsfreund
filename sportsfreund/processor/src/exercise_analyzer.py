@@ -9,38 +9,35 @@ from pose_extractor import PoseExtractor
 class ExerciseAnalyzer:
     def __init__(self, exercise_config):
         """
-        Initialisiert den ExerciseAnalyzer für die Analyse von Übungsvideos.
+        Initializes the ExerciseAnalyzer for analyzing videos of an Exercise.
 
         Args:
-            exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
+            exercise_config: path to the exercise configuration file or a dictionary containing the exercise configuration
         """
-        # Pose-Extraktor mit der Übungskonfiguration initialisieren
+
         self.pose_extractor = PoseExtractor(exercise_config)
 
-        # Modellpfad bestimmen
         self.model_dir = "models"
         self.model_path = os.path.join(self.model_dir, self.pose_extractor.get_model_name())
 
-        # Prüfen, ob das Modell existiert
         if not os.path.exists(self.model_path):
             print(f"Warnung: Modell unter {self.model_path} nicht gefunden!")
 
     def analyze_video(self, video_path, show_visualization=False):
         """
-        Analysiert ein Video und gibt Feedback zur Übungsausführung.
+        analizes a video and returns feedback for the exercise.
 
         Args:
-            video_path: Pfad zum Übungsvideo
-            show_visualization: Ob die Visualisierung angezeigt werden soll
+            video_path: path to the video to be analyzed
+            show_visualization: if True, the visualization of the pose detection is shown
 
         Returns:
-            Dictionary mit Feedback-Informationen oder None bei Fehler
+            dictionary containing feedback information or None if an error occurred
         """
         if not os.path.exists(self.model_path):
             print(f"Fehler: Trainiertes Modell unter {self.model_path} nicht gefunden! Bitte zuerst trainieren.")
             return None
 
-        # Landmarken extrahieren
         print(f"Analysiere Video: {video_path}")
         landmarks_sequence, frames = self.pose_extractor.extract_pose_from_video(video_path,
                                                                                  visualize=show_visualization)
@@ -49,14 +46,12 @@ class ExerciseAnalyzer:
             print(f"Warnung: Unerwartete Sequenzlänge {len(landmarks_sequence)}")
             return None
 
-        # Modell laden und Vorhersage treffen
+
         model = load_model(self.model_path)
         prediction = model.predict(np.expand_dims(landmarks_sequence, axis=0))[0]
 
-        # Kategorien aus der Konfiguration holen
         categories = self.pose_extractor.get_categories()
 
-        # Ergebnisse interpretieren
         predicted_class = np.argmax(prediction)
         confidence = prediction[predicted_class]
 
@@ -67,10 +62,8 @@ class ExerciseAnalyzer:
             "all_probabilities": {cat: float(prob) for cat, prob in zip(categories, prediction)}
         }
 
-        # Detailliertes Feedback basierend auf der Vorhersage
         feedback["text"] = self.generate_feedback_text(categories[predicted_class])
 
-        # Visualisierung, falls gewünscht
         if show_visualization and frames:
             self.show_visualization(frames)
 
@@ -78,30 +71,28 @@ class ExerciseAnalyzer:
 
     def generate_feedback_text(self, category_id):
         """
-        Generiert detailliertes Feedback basierend auf der erkannten Kategorie.
+        generates feedback text based on the predicted category.
 
         Args:
-            category_id: ID der erkannten Kategorie
+            category_id: id of the predicted category
 
         Returns:
             Feedback-Text
         """
-        # Feedback aus der Konfiguration holen
         if self.pose_extractor.config and "categories" in self.pose_extractor.config:
             for category in self.pose_extractor.config["categories"]:
                 if category["id"] == category_id:
                     return category["feedback"]
 
-        # Standardtext, falls keine spezifische Kategorie gefunden
         return "Keine spezifische Analyse verfügbar für diese Kategorie."
 
     def show_visualization(self, frames, delay=30):
         """
-        Zeigt die Visualisierung der Posen-Erkennung an.
+        Shows the visualization of the pose detection.
 
         Args:
-            frames: Liste von Frames mit visualisierten Landmarken
-            delay: Verzögerung zwischen den Frames in ms
+            frames: lists of frames with visualized landmarks
+            delay: delay between frames in ms
         """
         for frame in frames:
             cv2.imshow('Pose Analysis', frame)

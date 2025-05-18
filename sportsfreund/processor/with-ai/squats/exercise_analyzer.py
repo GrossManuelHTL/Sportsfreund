@@ -19,12 +19,18 @@ class ExerciseAnalyzer:
         self.model_path = model_path
         self.error_categories = error_categories
         self.sequence_length = sequence_length
+        self.model = None
 
         # Initialisieren des PoseExtractors
         self.pose_extractor = PoseExtractor(sequence_length=sequence_length)
 
-        # Prüfen, ob das Modell existiert
-        if not os.path.exists(model_path):
+        if os.path.exists(model_path):
+            try:
+                print(f"Loading model from {model_path}")
+                self.model = load_model(model_path)
+            except Exception as e:
+                print(f"Error loading model: {e}")
+        else:
             print(f"Warnung: Modell unter {model_path} nicht gefunden!")
 
     def analyze_video(self, video_path, show_visualization=False):
@@ -38,7 +44,7 @@ class ExerciseAnalyzer:
         Returns:
             Dictionary mit Feedback-Informationen oder None bei Fehler
         """
-        if not os.path.exists(self.model_path):
+        if self.model is None:
             print(f"Fehler: Trainiertes Modell unter {self.model_path} nicht gefunden! Bitte zuerst trainieren.")
             return None
 
@@ -52,8 +58,7 @@ class ExerciseAnalyzer:
             return None
 
         # Modell laden und Vorhersage treffen
-        model = load_model(self.model_path)
-        prediction = model.predict(np.expand_dims(landmarks_sequence, axis=0))[0]
+        prediction = self.model.predict(np.expand_dims(landmarks_sequence, axis=0))[0]
 
         # Ergebnisse interpretieren
         predicted_class = np.argmax(prediction)
@@ -109,3 +114,114 @@ class ExerciseAnalyzer:
             if cv2.waitKey(delay) & 0xFF == ord('q'):
                 break
         cv2.destroyAllWindows()
+
+    def predict_from_landmarks(self, landmarks_array):
+        """
+        Provides form feedback based on direct analysis of landmark positions
+        without using the trained model.
+
+        Args:
+            landmarks_array: numpy array of shape (33, 3) containing pose landmarks
+
+        Returns:
+            Dictionary with analysis results or None if analysis failed
+        """
+        try:
+            import mediapipe as mp
+            mp_pose = mp.solutions.pose
+
+            # Create landmark objects for easier access
+            class LandmarkAccess:
+                def __init__(self, array):
+                    self.data = array
+
+                @property
+                def x(self):
+                    return self.data[0]
+
+                @property
+                def y(self):
+                    return self.data[1]
+
+                @property
+                def z(self):
+                    return self.data[2]
+
+            landmarks = [LandmarkAccess(landmark) for landmark in landmarks_array]
+
+            # Define key landmark indices
+            LEFT_SHOULDER = mp_pose.PoseLandmark.LEFT_SHOULDER.value
+            LEFT_HIP = mp_pose.PoseLandmark.LEFT_HIP.value
+            LEFT_KNEE = mp_pose.PoseLandmark.LEFT_KNEE.value
+            LEFT_ANKLE = mp_pose.PoseLandmark.LEFT_ANKLE.value
+            RIGHT_SHOULDER = mp_pose.PoseLandmark.RIGHT_SHOULDER.value
+            RIGHT_HIP = mp_pose.PoseLandmark.RIGHT_HIP.value
+            RIGHT_KNEE = mp_pose.PoseLandmark.RIGHT_KNEE.value
+            RIGHT_ANKLE = mp_pose.PoseLandmark.RIGHT_ANKLE.value
+
+            # Calculate angles
+            def calculate_angle(a, b, c):
+                a = np.array([a.x, a.y])
+                b = np.array([b.x, b.y])
+                c = np.array([c.x, c.y])
+
+                radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+                angle = np.abs(radians * 180.0 / np.pi)
+
+                if angle > 180.0:
+                    angle = 360 - angle
+
+                return angle
+
+            # Calculate key angles
+            left_knee_angle = calculate_angle(
+                landmarks[LEFT_HIP],
+                landmarks[LEFT_KNEE],
+                landmarks[LEFT_ANKLE]
+            )
+
+            right_knee_angle = calculate_angle(
+                landmarks[RIGHT_HIP],
+                landmarks[RIGHT_KNEE],
+                landmarks[RIGHT_ANKLE]
+            )
+
+            left_back_angle = calculate_angle(
+                landmarks[LEFT_SHOULDER],
+                landmarks[LEFT_HIP],
+                landmarks[LEFT_KNEE]
+            )
+
+            # Rule-based analysis
+            avg_knee_angle = (left_knee_angle + right_knee_angle) / 2
+
+            # Simple rules for squat form
+            category = "correct"
+            confidence = 0.7
+
+            if avg_knee_angle > 140:  # Not deep enough
+                category = "too_high"
+                confidence = 0.8
+            elif abs(left_knee_angle - right_knee_angle) > 20:  # Asymmetrical squat
+                category = "knees_too_far_apart"
+                confidence = 0.7
+            elif left_back_angle < 150:  # Back not straight
+                category = "back_not_straight"
+                confidence = 0.8
+
+            feedback_text = self.generate_feedback_text(category)
+
+            # Create probabilities dict
+            probabilities = {cat: 0.1 for cat in self.error_categories}
+            probabilities[category] = confidence
+
+            return {
+                'predicted_category': category,
+                'confidence': confidence,
+                'text': feedback_text,
+                'all_probabilities': probabilities
+            }
+
+        except Exception as e:
+            print(f"Error during landmark analysis: {e}")
+            return None
