@@ -6,10 +6,11 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from pose_extractor import PoseExtractor
+from exercise_manager import ExerciseManager
 
 
 class ExerciseModelTrainer:
-    def __init__(self, exercise_config):
+    def __init__(self, exercise_name):
         """
         Initialisiert den Trainer für das Übungsmodell.
 
@@ -17,7 +18,12 @@ class ExerciseModelTrainer:
             exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
         """
         # Pose-Extraktor initialisieren
+
+        self.manager = ExerciseManager()
+        exercise_config = self.manager.get_exercise_config(exercise_name)
+
         self.pose_extractor = PoseExtractor(exercise_config)
+
 
         # Modellpfad bestimmen
         self.model_dir = "models"

@@ -48,6 +48,9 @@ class PoseExtractor:
         return []
 
     def get_exercise_name(self):
+        if not self.config:
+            print("config nicht da")
+
         """Gibt den Namen der Übung zurück"""
         if self.config and "exercise_name" in self.config:
             return self.config["exercise_name"]

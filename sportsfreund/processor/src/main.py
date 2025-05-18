@@ -29,24 +29,7 @@ def train_model(trainer, manager, exercise_name, epochs):
         print(f"Übung mit Name '{exercise_name}' nicht gefunden.")
         return
 
-    # Prüfen, ob Trainingsdaten vorhanden sind
-    data_path = os.path.join("data", exercise_name)
-    categories = [cat["id"] for cat in exercise["categories"]]
-
-    # Prüfen, ob für jede Kategorie ausreichend Daten vorhanden sind
-    missing_data = False
-    for category in categories:
-        category_path = os.path.join(data_path, category)
-        if not os.path.exists(category_path) or len(os.listdir(category_path)) < 3:
-            print(f"Nicht genügend Trainingsdaten für Kategorie '{category}'!")
-            missing_data = True
-
-    if missing_data:
-        print("Bitte zeichne mehr Trainingsdaten auf bevor du das Modell trainierst.")
-        return
-
-    # Modell trainieren
-    print(f"Starte Training für Übung '{exercise['name']}'...")
+    print(f"Starte Training für Übung '{exercise['exercise_name']}'...")
     trainer.train_model(exercise, epochs=epochs)
     print(f"Training abgeschlossen. Modell gespeichert als '{exercise['model_name']}'.")
 
@@ -77,12 +60,11 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None):
     print(f"Übung: {exercise['name']}")
 
     for category_id, probability in result.items():
-        # Finde die Kategorie-Details
+
         category = next((c for c in exercise["categories"] if c["id"] == category_id), None)
         if category:
             print(f"{category['name']}: {probability:.2f}")
 
-    # Hauptkategorie identifizieren (höchste Wahrscheinlichkeit)
     main_category_id = max(result, key=result.get)
     main_category = next((c for c in exercise["categories"] if c["id"] == main_category_id), None)
 
@@ -91,8 +73,6 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None):
         print(main_category["feedback"])
 
 def main():
-    """Hauptfunktion der Anwendung"""
-    # Verzeichnisse erstellen
     os.makedirs("data", exist_ok=True)
     os.makedirs("models", exist_ok=True)
     os.makedirs("exercises", exist_ok=True)
@@ -111,20 +91,20 @@ def main():
 
     # Trainingsdaten aufzeichnen
     record_parser = subparsers.add_parser("record", help="Trainingsdaten aufzeichnen")
-    record_parser.add_argument("exercise_name", help="Name der Übung")
-    record_parser.add_argument("category_id", help="ID der Kategorie")
+    record_parser.add_argument("--exercise_name", help="Name der Übung")
+    record_parser.add_argument("--category_id", help="ID der Kategorie")
     record_parser.add_argument("--samples", type=int, default=10,
                                help="Anzahl der aufzuzeichnenden Videos (Standard: 10)")
 
     # Modell trainieren
     train_parser = subparsers.add_parser("train", help="Modell für eine Übung trainieren")
-    train_parser.add_argument("exercise_name", help="Name der Übung")
+    train_parser.add_argument("--exercise_name", help="Name der Übung")
     train_parser.add_argument("--epochs", type=int, default=50,
                               help="Anzahl der Trainings-Epochen (Standard: 50)")
 
     # Übung analysieren
     analyze_parser = subparsers.add_parser("analyze", help="Übungsausführung analysieren")
-    analyze_parser.add_argument("exercise_name", help="ID der Übung")
+    analyze_parser.add_argument("--exercise_name", help="ID der Übung")
     analyze_parser.add_argument("--video", help="Pfad zum Übungsvideo (optional, sonst Webcam)")
 
     # Befehle parsen und ausführen
@@ -134,7 +114,7 @@ def main():
         list_exercises(manager)
 
     elif args.command == "train":
-        trainer = ExerciseModelTrainer("exercises/" + args.exercise_name + "/config.json")
+        trainer = ExerciseModelTrainer(args.exercise_name)
         train_model(trainer, manager, args.exercise_name, args.epochs)
 
     elif args.command == "analyze":

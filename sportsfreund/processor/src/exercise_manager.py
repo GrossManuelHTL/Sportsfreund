@@ -58,8 +58,10 @@ class ExerciseManager:
 
         Returns:
             Pfad zur Konfigurationsdatei oder None, wenn nicht gefunden
+            :param exercise_name:
         """
         config = os.path.join(self.exercises_dir, exercise_name, "config.json")
+        print(config)
 
         if isinstance(config, str) and os.path.exists(config):
             with open(config, 'r', encoding='utf-8') as f:
