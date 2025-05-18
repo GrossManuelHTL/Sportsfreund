@@ -18,7 +18,7 @@ def main(ex: str, video_path: str, live: bool):
     thresholds = get_thresholds_squats()
 
     match ex.lower():
-        case "squats":
+        case "squat":
             process_frame = ProcessSquatsFrame(thresholds=thresholds)
 
     pose = get_mediapipe_pose()
@@ -99,7 +99,7 @@ def main(ex: str, video_path: str, live: bool):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Squat Analysis Tool")
-    parser.add_argument('--ex', type=str, required=False, default="squats", help="Select exercise (squats,...)")
+    parser.add_argument('--ex', type=str, required=False, default="squat", help="Select exercise (squat,...)")
     parser.add_argument('--video', type=str, required=False, default="../samples/vali_squats.mp4", help="Select video path")
     parser.add_argument('--live', action='store_true', help="Run live using laptop camera")
     args = parser.parse_args()

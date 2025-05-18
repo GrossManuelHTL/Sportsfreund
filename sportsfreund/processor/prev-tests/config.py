@@ -1,4 +1,4 @@
-SQUAT_SOURCE = "../samples/squats.mp4"
+SQUAT_SOURCE = "../samples/squat.mp4"
 
 EXERCISE_PARAMS = {
     "squat": {

@@ -4,8 +4,7 @@ import argparse
 import time
 from config import SQUAT_SOURCE
 from pose.pose_detector import PoseDetector
-from utils.visualization import draw_landmarks, put_text
-from raspyfit.processor.src.video.squats_processor import process_video
+from raspyfit.processor.src import process_video
 from feedback.exercise_analyzer import ExerciseAnalyzer
 
 def main():
