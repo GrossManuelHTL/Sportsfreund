@@ -17,7 +17,6 @@ class ExerciseManager:
         """
         self.exercises_dir = exercises_dir
 
-        # Sicherstellen, dass das Verzeichnis existiert
         os.makedirs(exercises_dir, exist_ok=True)
 
     def get_available_exercises(self):
@@ -29,7 +28,6 @@ class ExerciseManager:
         """
         exercises = []
 
-        # Alle Unterverzeichnisse im Übungsverzeichnis durchsuchen
         for exercise_dir in os.listdir(self.exercises_dir):
             config_path = os.path.join(self.exercises_dir, exercise_dir, "config.json")
 
@@ -86,18 +84,14 @@ class ExerciseManager:
         if "exercise_name" not in config_data:
             return False, "Übungsname fehlt in der Konfiguration"
 
-        # ID aus dem Namen erstellen (Kleinbuchstaben, Leerzeichen durch Unterstriche ersetzen)
         exercise_id = config_data.get("id", config_data["exercise_name"].lower().replace(" ", "_"))
 
-        # Verzeichnis erstellen
         exercise_dir = os.path.join(self.exercises_dir, exercise_id)
         os.makedirs(exercise_dir, exist_ok=True)
 
-        # Videos-Verzeichnis erstellen
         videos_dir = os.path.join(exercise_dir, "videos")
         os.makedirs(videos_dir, exist_ok=True)
 
-        # Konfiguration speichern
         config_path = os.path.join(exercise_dir, "config.json")
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, indent=2)
@@ -119,14 +113,12 @@ class ExerciseManager:
         if not os.path.exists(exercise_dir):
             return False
 
-        # Alle Dateien im Verzeichnis rekursiv löschen
         for root, dirs, files in os.walk(exercise_dir, topdown=False):
             for file in files:
                 os.remove(os.path.join(root, file))
             for dir in dirs:
                 os.rmdir(os.path.join(root, dir))
 
-        # Verzeichnis selbst löschen
         os.rmdir(exercise_dir)
 
         return True

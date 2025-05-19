@@ -17,15 +17,12 @@ class ExerciseModelTrainer:
         Args:
             exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
         """
-        # Pose-Extraktor initialisieren
-
         self.manager = ExerciseManager()
         exercise_config = self.manager.get_exercise_config(exercise_name)
 
         self.pose_extractor = PoseExtractor(exercise_config)
 
 
-        # Modellpfad bestimmen
         self.model_dir = "models"
         os.makedirs(self.model_dir, exist_ok=True)
         self.model_path = os.path.join(self.model_dir, self.pose_extractor.get_model_name())
@@ -82,27 +79,22 @@ class ExerciseModelTrainer:
         print(f"Geladen: {len(X)} Videos")
         print(f"Kategorien: {self.pose_extractor.get_categories()}")
 
-        # Aufteilen in Trainings- und Validierungsdaten
         X_train, X_val, y_train, y_val = train_test_split(
             X, y,
             test_size=validation_split,
             random_state=42
         )
 
-        # Input Shape: (Sequenzlänge, Anzahl Features pro Frame)
         input_shape = (X_train.shape[1], X_train.shape[2])
         num_categories = len(y[0])  # Anzahl der Kategorien aus One-Hot-Encoding
 
-        # Modell erstellen
         model = self.build_model(input_shape, num_categories)
 
-        # Callbacks für Training
         callbacks = [
             EarlyStopping(patience=10, restore_best_weights=True),
             ModelCheckpoint(self.model_path, save_best_only=True)
         ]
 
-        # Modell trainieren
         print("Starte Training...")
         history = model.fit(
             X_train, y_train,
@@ -112,11 +104,9 @@ class ExerciseModelTrainer:
             callbacks=callbacks
         )
 
-        # Modell speichern
         model.save(self.model_path)
         print(f"Modell gespeichert unter {self.model_path}")
 
-        # Evaluieren
         loss, accuracy = model.evaluate(X_val, y_val)
         print(f"Validierungsgenauigkeit: {accuracy * 100:.2f}%")
 

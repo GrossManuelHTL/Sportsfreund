@@ -14,7 +14,6 @@ class PoseExtractor:
             exercise_config: Pfad zur Exercise-Konfig oder Konfig-Dictionary
             sequence_length: Anzahl der Frames, die für jede Übung standardisiert werden
         """
-        # MediaPipe-Setup für Pose-Erkennung
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
             static_image_mode=False,
@@ -81,12 +80,10 @@ class PoseExtractor:
             if not ret:
                 break
 
-            # Konvertieren zu RGB für MediaPipe
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = self.pose.process(frame_rgb)
 
             if result.pose_landmarks:
-                # Extrahieren der relevanten Landmarken
                 frame_landmarks = []
                 for landmark_id in self.relevant_landmarks:
                     landmark = result.pose_landmarks.landmark[landmark_id]
@@ -94,7 +91,6 @@ class PoseExtractor:
 
                 landmarks_sequence.append(frame_landmarks)
 
-                # Zeichnen der Landmarken für Visualisierung
                 if visualize:
                     annotated_frame = frame.copy()
                     self.mp_drawing.draw_landmarks(
@@ -134,7 +130,6 @@ class PoseExtractor:
                 label[categories.index(category)] = 1
                 return label
 
-        # Fallback, falls keine Kategorie erkannt wird
         return [0] * len(categories)
 
     def load_training_data(self, video_dir):

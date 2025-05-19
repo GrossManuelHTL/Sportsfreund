@@ -44,30 +44,25 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None):
         print(f"Übung mit ID '{exercise_id}' nicht gefunden.")
         return
 
-    # Prüfen, ob ein Modell existiert
     model_path = os.path.join("models", exercise["model_name"])
     if not os.path.exists(model_path):
         print(f"Kein trainiertes Modell für '{exercise['name']}' gefunden.")
         print("Bitte trainiere zuerst ein Modell mit dem 'train' Befehl.")
         return
 
-    # Wenn kein Videopfad angegeben, Webcam verwenden
     if video_path:
         result = analyzer.analyze_video(exercise_id, video_path)
     else:
         result = analyzer.analyze_live(exercise_id)
 
-    # Ergebnisse anzeigen
     print("\n=== Analyse Ergebnisse ===")
     print(f"Übung: {exercise['exercise_name']}")
 
     for category_id, probability in result.items():
-        # Finde die Kategorie-Details
         category = next((c for c in exercise["categories"] if c["id"] == category_id), None)
         if category:
             print(f"{category['name']}: {probability:.2f}")
 
-    # Hauptkategorie identifizieren (höchste Wahrscheinlichkeit)
     main_category_id = max(result, key=result.get)
     main_category = next((c for c in exercise["categories"] if c["id"] == main_category_id), None)
 
@@ -77,7 +72,6 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None):
 
 def main():
     """Hauptfunktion der Anwendung"""
-    # Verzeichnisse erstellen
     os.makedirs("data", exist_ok=True)
     os.makedirs("models", exist_ok=True)
     os.makedirs("exercises", exist_ok=True)
