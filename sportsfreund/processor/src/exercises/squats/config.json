@@ -31,6 +31,34 @@
       "feedback": "Achte daruf, deinen Rücken gerade zu halten, wenn du wieder hochkommst. Dein Oberkörper sollte annähernd aufrecht bleiben."
     }
   ],
+  "phases": [
+    {
+      "id": "standing",
+      "name": "Stehende Position",
+      "description": "Ausgangsposition im Stehen",
+      "is_start": true
+    },
+    {
+      "id": "squat_down",
+      "name": "Abwärtsbewegung",
+      "description": "Bewegung nach unten in die Squat-Position"
+    },
+    {
+      "id": "bottom",
+      "name": "Tiefster Punkt",
+      "description": "Tiefster Punkt der Kniebeuge"
+    },
+    {
+      "id": "squat_up",
+      "name": "Aufwärtsbewegung",
+      "description": "Bewegung nach oben aus der Squat-Position"
+    }
+  ],
+  "rep_detection": {
+    "completed_sequence": ["standing", "bottom", "standing"],
+    "count_on_phase": "standing",
+    "min_phase_duration": 5
+  },
   "relevant_landmarks": [
     "LEFT_SHOULDER",
     "RIGHT_SHOULDER",
@@ -42,3 +70,4 @@
     "RIGHT_ANKLE"
   ]
 }
+

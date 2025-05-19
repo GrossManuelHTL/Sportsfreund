@@ -44,8 +44,21 @@ class PoseExtractor:
             return [cat["id"] for cat in self.config["categories"]]
         return []
 
-    def get_exercise_name(self):
+    def get_phases(self):
+        """Gibt die Phasen der Übung aus der Konfiguration zurück"""
+        if self.config and "phases" in self.config:
+            return [phase["id"] for phase in self.config["phases"]]
+        return []
 
+    def get_phase_info(self, phase_id):
+        """Gibt Informationen zu einer bestimmten Phase zurück"""
+        if self.config and "phases" in self.config:
+            for phase in self.config["phases"]:
+                if phase["id"] == phase_id:
+                    return phase
+        return None
+
+    def get_exercise_name(self):
         """Gibt den Namen der Übung zurück"""
         if self.config and "exercise_name" in self.config:
             return self.config["exercise_name"]
@@ -113,21 +126,37 @@ class PoseExtractor:
         """
         Extrahiert Label-Informationen aus dem Dateinamen.
 
+        Unterstützt jetzt auch Phasenerkennung für Wiederholungen.
+
         Args:
-            :param dirname:
+            dirname: Verzeichnisname mit Kategorie/Phasen-Information
+
         Returns:
             One-Hot encoded Label
         """
-        categories = self.get_categories()
+        # Prüfen, ob wir mit Phasen oder Kategorien arbeiten
+        if "phases" in self.config and dirname.startswith("phase_"):
+            phases = self.get_phases()
+            phase_name = dirname.replace("phase_", "")
 
-        for category in categories:
-            if category in dirname:
-                # One-hot encoding
-                label = [0] * len(categories)
-                label[categories.index(category)] = 1
+            if phase_name in phases:
+                # One-hot encoding für Phasen
+                label = [0] * len(phases)
+                label[phases.index(phase_name)] = 1
                 return label
+            return [0] * len(phases)
+        else:
+            # Standard-Verarbeitung für Kategorien
+            categories = self.get_categories()
 
-        return [0] * len(categories)
+            for category in categories:
+                if category in dirname:
+                    # One-hot encoding
+                    label = [0] * len(categories)
+                    label[categories.index(category)] = 1
+                    return label
+
+            return [0] * len(categories)
 
     def load_training_data(self, video_dir):
         """
@@ -155,7 +184,7 @@ class PoseExtractor:
             for filename in os.listdir(os.path.join(video_dir, dirname)):
                 if (not video_prefix or filename.startswith(video_prefix)) and \
                         filename.endswith(('.mp4', '.avi', '.mov')):
-                    video_path = os.path.join(video_dir,dirname, filename)
+                    video_path = os.path.join(video_dir, dirname, filename)
                     print(f"Verarbeite {filename}...")
                     landmarks_sequence, _ = self.extract_pose_from_video(video_path)
 
@@ -167,3 +196,51 @@ class PoseExtractor:
                         print(f"Überspringe {filename}: Unerwartete Sequenzlänge {len(landmarks_sequence)}")
 
         return np.array(X), np.array(y), filenames
+
+    def load_phase_training_data(self, video_dir):
+        """
+        Lädt spezifisch Videos für das Training von Phasenerkennungsmodellen.
+        Erwartet Videos in Verzeichnissen mit dem Format 'phase_X' wobei X die Phase-ID ist.
+
+        Args:
+            video_dir: Verzeichnis mit Trainingsvideos für Phasen
+
+        Returns:
+            X: Trainingsfeatures (Landmarken-Sequenzen)
+            y: Labels (One-Hot encoded)
+            filenames: Liste der Dateinamen
+        """
+        X = []
+        y = []
+        filenames = []
+
+        video_prefix = self.config.get("video_prefix", "")
+
+        print(f"Lade Phasentrainings-Daten aus {video_dir}...")
+
+        phase_dirs = [d for d in os.listdir(video_dir) if os.path.isdir(os.path.join(video_dir, d)) and d.startswith("phase_")]
+
+        print(f"Gefundene Phasendateien: {phase_dirs}")
+
+        if not phase_dirs:
+            print("Keine Phasen-Verzeichnisse gefunden. Verzeichnisse sollten 'phase_X' heißen.")
+            return np.array(X), np.array(y), filenames
+
+        for dirname in phase_dirs:
+            phase_dir_path = os.path.join(video_dir, dirname)
+            for filename in os.listdir(phase_dir_path):
+                if (not video_prefix or filename.startswith(video_prefix)) and \
+                        filename.endswith(('.mp4', '.avi', '.mov')):
+                    video_path = os.path.join(phase_dir_path, filename)
+                    print(f"Verarbeite Phasenvideo {filename}...")
+                    landmarks_sequence, _ = self.extract_pose_from_video(video_path)
+
+                    if len(landmarks_sequence) > 0:
+                        X.append(landmarks_sequence)
+                        y.append(self.extract_label_from_dirname(dirname))
+                        filenames.append(filename)
+                    else:
+                        print(f"Überspringe {filename}: Keine Landmarken erkannt")
+
+        return np.array(X), np.array(y), filenames
+
