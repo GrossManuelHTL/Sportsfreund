@@ -26,6 +26,9 @@ def train_model(trainer, manager, exercise_name, epochs):
     exercise = manager.get_exercise_config(exercise_name)
     exercises_dir = os.path.join("exercises", exercise_name)
 
+    print("Train model method")
+    print(exercises_dir)
+
     if not exercise:
         print(f"Übung mit Name '{exercise_name}' nicht gefunden.")
         return
@@ -51,9 +54,9 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None):
         return
 
     if video_path:
-        result = analyzer.analyze_video(exercise_id, video_path)
+        result = analyzer.analyze_video(video_path)
     else:
-        result = analyzer.analyze_live(exercise_id)
+        result = analyzer.analyze_live(video_path)
 
     print("\n=== Analyse Ergebnisse ===")
     print(f"Übung: {exercise['exercise_name']}")

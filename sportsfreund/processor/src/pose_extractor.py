@@ -45,8 +45,6 @@ class PoseExtractor:
         return []
 
     def get_exercise_name(self):
-        if not self.config:
-            print("config nicht da")
 
         """Gibt den Namen der Übung zurück"""
         if self.config and "exercise_name" in self.config:
@@ -111,20 +109,19 @@ class PoseExtractor:
 
         return np.array(landmarks_sequence), frames if visualize else None
 
-    def extract_label_from_filename(self, filename):
+    def extract_label_from_dirname(self, dirname):
         """
         Extrahiert Label-Informationen aus dem Dateinamen.
 
         Args:
-            filename: Name der Videodatei
-
+            :param dirname:
         Returns:
             One-Hot encoded Label
         """
         categories = self.get_categories()
 
         for category in categories:
-            if category in filename:
+            if category in dirname:
                 # One-hot encoding
                 label = [0] * len(categories)
                 label[categories.index(category)] = 1
@@ -150,20 +147,23 @@ class PoseExtractor:
 
         video_prefix = self.config.get("video_prefix", "")
 
-        print(video_dir)
+        print("Load Training data method")
 
-        for filename in os.listdir(video_dir):
-            if (not video_prefix or filename.startswith(video_prefix)) and \
-                    filename.endswith(('.mp4', '.avi', '.mov')):
-                video_path = os.path.join(video_dir, filename)
-                print(f"Verarbeite {filename}...")
-                landmarks_sequence, _ = self.extract_pose_from_video(video_path)
+        dirs = [d for d in os.listdir(video_dir) if os.path.isdir(os.path.join(video_dir, d))]
 
-                if len(landmarks_sequence) == self.sequence_length:
-                    X.append(landmarks_sequence)
-                    y.append(self.extract_label_from_filename(filename))
-                    filenames.append(filename)
-                else:
-                    print(f"Überspringe {filename}: Unerwartete Sequenzlänge {len(landmarks_sequence)}")
+        for dirname in dirs:
+            for filename in os.listdir(os.path.join(video_dir, dirname)):
+                if (not video_prefix or filename.startswith(video_prefix)) and \
+                        filename.endswith(('.mp4', '.avi', '.mov')):
+                    video_path = os.path.join(video_dir,dirname, filename)
+                    print(f"Verarbeite {filename}...")
+                    landmarks_sequence, _ = self.extract_pose_from_video(video_path)
+
+                    if len(landmarks_sequence) == self.sequence_length:
+                        X.append(landmarks_sequence)
+                        y.append(self.extract_label_from_dirname(dirname))
+                        filenames.append(filename)
+                    else:
+                        print(f"Überspringe {filename}: Unerwartete Sequenzlänge {len(landmarks_sequence)}")
 
         return np.array(X), np.array(y), filenames

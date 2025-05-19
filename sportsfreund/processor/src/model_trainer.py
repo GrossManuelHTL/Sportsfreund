@@ -86,7 +86,7 @@ class ExerciseModelTrainer:
         )
 
         input_shape = (X_train.shape[1], X_train.shape[2])
-        num_categories = len(y[0])  # Anzahl der Kategorien aus One-Hot-Encoding
+        num_categories = len(y[0])
 
         model = self.build_model(input_shape, num_categories)
 

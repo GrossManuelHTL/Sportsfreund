@@ -59,6 +59,7 @@ class ExerciseManager:
             :param exercise_name:
         """
         config = os.path.join(self.exercises_dir, exercise_name, "config.json")
+        print("Get exercise method")
         print(config)
 
         if isinstance(config, str) and os.path.exists(config):
