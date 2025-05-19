@@ -1,0 +1,54 @@
+{
+    "name": "squats",
+    "description": "Kniebeugen-Übung",
+    "joints": [
+        "left_knee", "right_knee", "left_hip", "right_hip",
+        "left_ankle", "right_ankle", "left_shoulder", "right_shoulder"
+    ],
+    "phases": ["standing", "bottom"],
+    "tolerance": 0.15,
+    "phase_criteria": {
+        "standing": {
+            "left_knee_angle": [160, 180],
+            "right_knee_angle": [160, 180],
+            "left_hip_angle": [160, 180],
+            "right_hip_angle": [160, 180]
+        },
+        "bottom": {
+            "left_knee_angle": [70, 120],
+            "right_knee_angle": [70, 120],
+            "left_hip_angle": [70, 120],
+            "right_hip_angle": [70, 120]
+        }
+    },
+    "feedback_rules": {
+        "back_straight": {
+            "description": "Rücken gerade halten",
+            "conditions": {
+                "back_angle": [80, 100]
+            }
+        },
+        "knees_over_toes": {
+            "description": "Knie nicht über die Zehenspitzen",
+            "conditions": {
+                "knee_over_toe_distance": [-50, 50]
+            }
+        },
+        "squat_depth": {
+            "description": "Tiefe der Kniebeuge",
+            "conditions": {
+                "left_knee_angle": [70, 100],
+                "right_knee_angle": [70, 100]
+            }
+        },
+        "symmetric_execution": {
+            "description": "Gleichmäßige Ausführung",
+            "conditions": {
+                "knee_angle_difference": [0, 15],
+                "hip_angle_difference": [0, 15]
+            }
+        }
+    },
+    "repetition_sequence": ["standing", "bottom", "standing"]
+}
+
