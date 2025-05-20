@@ -3,30 +3,45 @@
     "description": "Kniebeugen-Übung",
     "joints": [
         "left_knee", "right_knee", "left_hip", "right_hip",
-        "left_ankle", "right_ankle"
+        "left_ankle", "right_ankle", "left_shoulder", "right_shoulder"
     ],
-    "phases": ["standing", "bottom"],
+    "phases": ["standing", "down", "bottom", "up"],
     "tolerance": 0.15,
     "phase_criteria": {
         "standing": {
             "left_knee_angle": [165, 180],
             "right_knee_angle": [165, 180]
         },
+        "down": {
+            "left_knee_angle": [110, 165],
+            "right_knee_angle": [110, 165]
+        },
         "bottom": {
             "left_knee_angle": [70, 110],
             "right_knee_angle": [70, 110]
+        },
+        "up": {
+            "left_knee_angle": [165, 180],
+            "right_knee_angle": [165, 180]
         }
     },
     "feedback_rules": {
-        "knees_over_toes": {
-            "description": "Knie nicht über die Zehenspitzen",
+        "side_position": {
+            "description": "BITTE SEITLICH ZUR KAMERA STEHEN",
             "conditions": {
-                "knee_over_toe_distance": [-40, 40]
+                "shoulder_alignment": [0.7, 1.0]
+            }
+        },
+        "knees_over_toes": {
+            "description": "KNIE NICHT ÜBER DIE ZEHENSPITZEN",
+            "phases": ["down", "bottom"],
+            "conditions": {
+                "knee_toe_horizontal_distance": [-40, 40]
             }
         },
         "squat_depth": {
-            "description": "Tiefe der Kniebeuge",
-            "phase": "bottom",
+            "description": "TIEFER GEHEN",
+            "phases": ["bottom"],
             "conditions": {
                 "left_knee_angle": [70, 95],
                 "right_knee_angle": [70, 95]
@@ -34,3 +49,4 @@
         }
     }
 }
+
