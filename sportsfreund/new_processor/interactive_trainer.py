@@ -152,6 +152,7 @@ class InteractiveTrainer:
             debug=self.debug
         )
 
+
         self.current_exercise = exercise_name
         self.current_rep = 0
         self.last_phase = None
