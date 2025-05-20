@@ -1,5 +1,5 @@
 {
-  "squat": {
+  "squats": {
     "preparation_instructions": [
       "Stand with your feet shoulder-width apart.",
       "Point your toes slightly outward.",
@@ -17,7 +17,7 @@
       "Fully extend your hips at the top of the movement."
     ]
   },
-  "push_up": {
+  "push_ups": {
     "preparation_instructions": [
       "Begin in a plank position with hands slightly wider than shoulder-width apart.",
       "Place your palms flat on the floor, fingers pointing forward.",

@@ -9,46 +9,85 @@
     "tolerance": 0.15,
     "phase_criteria": {
         "standing": {
-            "left_knee_angle": [160, 180],
-            "right_knee_angle": [160, 180],
-            "left_hip_angle": [160, 180],
-            "right_hip_angle": [160, 180]
+            "left_knee_angle": [165, 180],
+            "right_knee_angle": [165, 180],
+            "left_hip_angle": [165, 180],
+            "right_hip_angle": [165, 180]
         },
         "bottom": {
-            "left_knee_angle": [70, 120],
-            "right_knee_angle": [70, 120],
-            "left_hip_angle": [70, 120],
-            "right_hip_angle": [70, 120]
+            "left_knee_angle": [70, 110],
+            "right_knee_angle": [70, 110],
+            "left_hip_angle": [65, 100],
+            "right_hip_angle": [65, 100]
         }
     },
     "feedback_rules": {
         "back_straight": {
             "description": "Rücken gerade halten",
             "conditions": {
-                "back_angle": [80, 100]
+                "back_angle": [82, 98]
             }
         },
         "knees_over_toes": {
             "description": "Knie nicht über die Zehenspitzen",
             "conditions": {
-                "knee_over_toe_distance": [-50, 50]
+                "knee_over_toe_distance": [-40, 40]
             }
         },
         "squat_depth": {
             "description": "Tiefe der Kniebeuge",
+            "phase": "bottom",
             "conditions": {
-                "left_knee_angle": [70, 100],
-                "right_knee_angle": [70, 100]
+                "left_knee_angle": [70, 95],
+                "right_knee_angle": [70, 95]
             }
         },
         "symmetric_execution": {
             "description": "Gleichmäßige Ausführung",
             "conditions": {
-                "knee_angle_difference": [0, 15],
-                "hip_angle_difference": [0, 15]
+                "knee_angle_difference": [0, 10],
+                "hip_angle_difference": [0, 10]
+            }
+        },
+        "feet_position": {
+            "description": "Fußposition prüfen",
+            "conditions": {
+                "feet_distance": [10, 50]
+            }
+        },
+        "knee_alignment": {
+            "description": "Knie in Richtung Füße ausrichten",
+            "conditions": {
+                "knee_alignment": [0, 12]
+            }
+        },
+        "motion_speed": {
+            "description": "Kontrollierte Geschwindigkeit",
+            "conditions": {
+                "min_phase_duration": 1.2
+            }
+        },
+        "complete_range_of_motion": {
+            "description": "Vollständiger Bewegungsbereich",
+            "conditions": {
+                "min_standing_knee_angle": 160,
+                "max_bottom_knee_angle": 95
             }
         }
     },
-    "repetition_sequence": ["standing", "bottom", "standing"]
+    "min_rep_quality": 0.7,
+    "phase_durations": {
+        "standing": {"min": 0.5, "optimal": 1.0},
+        "bottom": {"min": 1.0, "optimal": 2.0}
+    },
+    "feedback_priorities": {
+        "back_straight": 1,
+        "knees_over_toes": 2,
+        "squat_depth": 3,
+        "knee_alignment": 4,
+        "symmetric_execution": 5,
+        "feet_position": 6,
+        "motion_speed": 7,
+        "complete_range_of_motion": 8
+    }
 }
-
