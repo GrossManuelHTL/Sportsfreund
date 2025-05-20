@@ -151,16 +151,17 @@ def analyze_exercise(analyzer, manager, exercise_id, video_path=None, show_visua
 
     if video_path:
         result = analyzer.analyze_video(video_path, show_visualization=show_visualization)
+        if not result:
+            print("Analyse fehlgeschlagen.")
+            return
+
+        # Ergebnisse ausgeben
+        print_analysis_result(result)
     else:
-        # Für Live-Analyse
-        result = analyzer.analyze_live()
-
-    if not result:
-        print("Analyse fehlgeschlagen.")
-        return
-
-    # Ergebnisse ausgeben
-    print_analysis_result(result)
+        # Für Live-Analyse - pass the exercise config
+        print("Starting live analysis with webcam. Press 'q' to quit.")
+        analyzer.analyze_live(exercise)  # Pass the exercise config
+        return  # Live analysis has no return value
 
 
 def main():
@@ -191,7 +192,8 @@ def main():
 
     analyze_parser = subparsers.add_parser("analyze", help="Übung analysieren")
     analyze_parser.add_argument("--exercise_name", required=True, help="Name der Übung")
-    analyze_parser.add_argument("--video", required=True, help="Pfad zum Übungsvideo")
+    analyze_parser.add_argument("--video", required=False, default=None,
+                                help="Pfad zum Übungsvideo (optional, sonst Webcam)")
     analyze_parser.add_argument("--visualization", action="store_true",
                                 help="Visualisierung der Pose-Erkennung anzeigen")
 

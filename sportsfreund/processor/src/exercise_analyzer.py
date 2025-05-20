@@ -1,373 +1,421 @@
 import os
-import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
+import cv2
+import mediapipe as mp
+import time
 from pose_extractor import PoseExtractor
-from exercise_manager import ExerciseManager
+from tensorflow.keras.models import load_model
 
 
 class ExerciseAnalyzer:
-    def __init__(self, exercise_name):
+    def __init__(self, exercise_name=None, model_dir="models"):
         """
-        Initializes the ExerciseAnalyzer for analyzing videos of an Exercise.
+        Initialize the exercise analyzer
 
         Args:
-            exercise_config: path to the exercise configuration file or a dictionary containing the exercise configuration
+            exercise_name (str): Name of the exercise to analyze
+            model_dir (str): Directory where models are stored
         """
+        from exercise_manager import ExerciseManager
 
+        self.model_dir = model_dir
         self.manager = ExerciseManager()
+        self.exercise_name = exercise_name
+        self.pose_extractor = None
+        self.model = None
 
-        exercise_config = self.manager.get_exercise_config(exercise_name)
+        if exercise_name:
+            config = self.manager.get_exercise_config(exercise_name)
+            if config:
+                self.pose_extractor = PoseExtractor(config)
+                model_path = os.path.join(model_dir, self.pose_extractor.get_model_name())
+                if os.path.exists(model_path):
+                    self.model = load_model(model_path)
+                    print(f"Loaded model for {exercise_name} from {model_path}")
+                else:
+                    print(f"No trained model found at {model_path}")
+            else:
+                print(f"No configuration found for exercise: {exercise_name}")
 
-        self.pose_extractor = PoseExtractor(exercise_config)
+    def predict_from_landmarks(self, landmarks_array):
+        """
+        Predicts exercise form from landmarks using the trained model
 
-        self.model_dir = "models"
-        self.model_path = os.path.join(self.model_dir, self.pose_extractor.get_model_name())
+        Args:
+            landmarks_array: numpy array of landmark positions
 
-        # Pfad für das Phasenerkennungsmodell
-        base_name, ext = os.path.splitext(self.pose_extractor.get_model_name())
-        self.phase_model_path = os.path.join(self.model_dir, f"{base_name}_phases{ext}")
+        Returns:
+            Dictionary with predicted category and confidence
+        """
+        try:
+            # Get the expected input shape from the model
+            expected_shape = self.model.input_shape
 
-        if not os.path.exists(self.model_path):
-            print(f"Warnung: Modell unter {self.model_path} nicht gefunden!")
+            # Model expects (None, 30, 32) but we have a single frame (1, 99)
+            # Need to reshape to match expected format
+            num_landmarks = 33  # MediaPipe provides 33 landmarks
+            num_coords = 3  # x, y, z coordinates per landmark
 
-        # Wiederholungserkennung
-        self.rep_config = None
-        if "rep_detection" in self.pose_extractor.config:
-            self.rep_config = self.pose_extractor.config["rep_detection"]
+            # Reshape the landmarks to match the expected format
+            # For sequence models (expected_shape has 3 dimensions)
+            if len(expected_shape) > 2:
+                seq_length = expected_shape[1]  # Usually 30
+                features = expected_shape[2]  # Usually 32
+
+                # Create a sequence by duplicating the current frame
+                # Not ideal but allows us to use the model for real-time feedback
+                flat_landmarks = landmarks_array.flatten()
+
+                # Make sure we don't exceed the feature size
+                if len(flat_landmarks) > features:
+                    flat_landmarks = flat_landmarks[:features]
+                elif len(flat_landmarks) < features:
+                    # Pad with zeros if we have fewer features than expected
+                    flat_landmarks = np.pad(flat_landmarks, (0, features - len(flat_landmarks)))
+
+                reshaped_data = np.tile(flat_landmarks, (seq_length, 1))
+                model_input = np.expand_dims(reshaped_data, axis=0)  # Add batch dimension
+            else:
+                # For models that expect flattened input
+                flat_landmarks = landmarks_array.flatten()
+                model_input = np.expand_dims(flat_landmarks, axis=0)
+
+            # Make prediction with properly shaped input
+            prediction = self.model.predict(model_input, verbose=0)[0]
+
+            # Get categories from the config
+            categories = [category["id"] for category in self.pose_extractor.config["categories"]]
+
+            predicted_idx = np.argmax(prediction)
+            confidence = prediction[predicted_idx]
+
+            return {
+                "predicted_category": categories[predicted_idx],
+                "confidence": float(confidence)
+            }
+        except Exception as e:
+            print(f"Prediction error: {e}")
+            return None
 
     def analyze_video(self, video_path, show_visualization=False):
         """
-        analizes a video and returns feedback for the exercise.
+        Analyze exercise form in a video
 
         Args:
-            video_path: path to the video to be analyzed
-            show_visualization: if True, the visualization of the pose detection is shown
+            video_path (str): Path to the video file
+            show_visualization (bool): Whether to show visualization
 
         Returns:
-            dictionary containing feedback information or None if an error occurred
+            Dictionary with analysis results
         """
-        if not os.path.exists(self.model_path):
-            print(f"Fehler: Trainiertes Modell unter {self.model_path} nicht gefunden! Bitte zuerst trainieren.")
+        if not os.path.exists(video_path):
+            print(f"Video file not found: {video_path}")
             return None
 
-        print(f"Analysiere Video: {video_path}")
-        landmarks_sequence, frames = self.pose_extractor.extract_pose_from_video(video_path,
-                                                                                 visualize=show_visualization)
-
-        if len(landmarks_sequence) == 0:
-            print(f"Warnung: Keine Landmarken im Video erkannt")
+        if not self.pose_extractor or not self.model:
+            print("Pose extractor or model not initialized")
             return None
 
-        model = load_model(self.model_path)
+        # Initialize MediaPipe Pose
+        mp_pose = mp.solutions.pose
+        pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-        # Standard-Analyse der Übungsqualität für das Gesamtvideo
-        if len(landmarks_sequence) == self.pose_extractor.sequence_length:
-            prediction = model.predict(np.expand_dims(landmarks_sequence, axis=0))[0]
-            categories = self.pose_extractor.get_categories()
-            predicted_class = np.argmax(prediction)
-            confidence = prediction[predicted_class]
-
-            feedback = {
-                "exercise": self.pose_extractor.get_exercise_name(),
-                "predicted_category": categories[predicted_class],
-                "confidence": float(confidence),
-                "all_probabilities": {cat: float(prob) for cat, prob in zip(categories, prediction)}
-            }
-
-            feedback["text"] = self.generate_feedback_text(categories[predicted_class])
-
-            # Wenn auch Wiederholungen erkannt werden sollen
-            if os.path.exists(self.phase_model_path) and self.rep_config:
-                rep_results = self.analyze_repetitions(video_path)
-                feedback["repetitions"] = rep_results
-
-        else:
-            print(f"Warnung: Unerwartete Sequenzlänge {len(landmarks_sequence)}")
-
-            # Wenn auch Wiederholungen erkannt werden sollen
-            if os.path.exists(self.phase_model_path) and self.rep_config:
-                feedback = {
-                    "exercise": self.pose_extractor.get_exercise_name(),
-                    "text": "Video hat unerwartete Länge für Übungsqualitätsanalyse, aber Wiederholungen wurden erkannt."
-                }
-                rep_results = self.analyze_repetitions(video_path)
-                feedback["repetitions"] = rep_results
-            else:
-                return None
-
-        if show_visualization and frames:
-            self.show_visualization(frames)
-
-        return feedback
-
-    def analyze_repetitions(self, video_path):
-        """
-        Analysiert ein Video auf Übungswiederholungen und gibt individuelles Feedback für jede Wiederholung.
-
-        Args:
-            video_path: Pfad zum Analysevideo
-
-        Returns:
-            Liste mit Informationen zu jeder erkannten Wiederholung
-        """
-        print("Analysiere Wiederholungen...")
-
-        # Laden des Phasenmodells
-        phase_model = load_model(self.phase_model_path)
-        phases = self.pose_extractor.get_phases()
-
-        # Wiederholungsparameter aus der Konfiguration
-        completed_sequence = self.rep_config.get("completed_sequence", [])
-        count_on_phase = self.rep_config.get("count_on_phase", phases[0] if phases else None)
-        min_phase_duration = self.rep_config.get("min_phase_duration", 5)
-
-        # Pose-Landmarken extrahieren (ohne Normalisierung der Sequenzlänge)
+        # Open video file
         cap = cv2.VideoCapture(video_path)
-        landmarks_sequence = []
-        frames = []
+        if not cap.isOpened():
+            print(f"Error opening video file: {video_path}")
+            return None
+
+        frame_count = 0
+        predictions = []
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = self.pose_extractor.pose.process(frame_rgb)
+            frame_count += 1
 
-            if result.pose_landmarks:
-                frame_landmarks = []
-                for landmark_id in self.pose_extractor.relevant_landmarks:
-                    landmark = result.pose_landmarks.landmark[landmark_id]
-                    frame_landmarks.extend([landmark.x, landmark.y, landmark.z, landmark.visibility])
+            # Convert to RGB
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                landmarks_sequence.append(frame_landmarks)
-                frames.append(frame)
+            # Process frame with MediaPipe
+            results = pose.process(image)
+
+            if results.pose_landmarks:
+                # Extract landmarks
+                landmarks = np.array([[landmark.x, landmark.y, landmark.z]
+                                      for landmark in results.pose_landmarks.landmark])
+
+                # Get prediction for this frame
+                prediction = self.predict_from_landmarks(landmarks)
+                if prediction:
+                    predictions.append(prediction)
+
+                # Visualization if requested
+                if show_visualization:
+                    mp.solutions.drawing_utils.draw_landmarks(
+                        frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+                    cv2.putText(frame, f"Prediction: {prediction['predicted_category']}",
+                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    cv2.putText(frame, f"Confidence: {prediction['confidence']:.2f}",
+                                (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+                    cv2.imshow('Video Analysis', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
 
         cap.release()
+        if show_visualization:
+            cv2.destroyAllWindows()
 
-        if not landmarks_sequence:
-            return {
-                "count": 0,
-                "message": "Keine Landmarken erkannt"
-            }
+        # Process all predictions to get overall result
+        if not predictions:
+            print("No pose landmarks detected in the video")
+            return None
 
-        # Phasen für jeden Frame vorhersagen
-        sliding_window_size = self.pose_extractor.sequence_length
-        all_phases = []
-
-        for i in range(0, len(landmarks_sequence) - sliding_window_size + 1, 5):  # Schritt 5 für Geschwindigkeit
-            window = np.array(landmarks_sequence[i:i+sliding_window_size])
-            prediction = phase_model.predict(np.expand_dims(window, axis=0))[0]
-            predicted_phase_idx = np.argmax(prediction)
-            all_phases.append({
-                "frame_idx": i + sliding_window_size // 2,  # Mittlerer Frame des Fensters
-                "phase": phases[predicted_phase_idx],
-                "confidence": float(prediction[predicted_phase_idx])
-            })
-
-        # Glätten der Phasen mit einem einfachen Mehrheitsvoting
-        smoothed_phases = []
-        window_size = 5
-
-        for i in range(len(all_phases)):
-            start_idx = max(0, i - window_size // 2)
-            end_idx = min(len(all_phases) - 1, i + window_size // 2)
-            window_phases = [all_phases[j]["phase"] for j in range(start_idx, end_idx + 1)]
-
-            # Mehrheitsvoting
-            phase_counts = {}
-            for phase in window_phases:
-                if phase in phase_counts:
-                    phase_counts[phase] += 1
-                else:
-                    phase_counts[phase] = 1
-
-            max_count = 0
-            majority_phase = all_phases[i]["phase"]
-            for phase, count in phase_counts.items():
-                if count > max_count:
-                    max_count = count
-                    majority_phase = phase
-
-            print(f"Frame {all_phases[i]['frame_idx']}: Phase {majority_phase} mit {max_count} Stimmen")
-
-            smoothed_phases.append({
-                "frame_idx": all_phases[i]["frame_idx"],
-                "phase": majority_phase,
-                "confidence": all_phases[i]["confidence"]
-            })
-
-        # Zusammenhängende Segmente von Phasen finden
-        phase_segments = []
-        current_segment = None
-
-        for phase_info in smoothed_phases:
-            if current_segment is None or current_segment["phase"] != phase_info["phase"]:
-                if current_segment is not None:
-                    current_segment["end_frame"] = phase_info["frame_idx"] - 1
-                    phase_segments.append(current_segment)
-
-                current_segment = {
-                    "phase": phase_info["phase"],
-                    "start_frame": phase_info["frame_idx"],
-                    "end_frame": phase_info["frame_idx"],
-                    "confidence": phase_info["confidence"]
-                }
+        # Find most common prediction
+        categories = {}
+        for pred in predictions:
+            category = pred["predicted_category"]
+            if category in categories:
+                categories[category] += 1
             else:
-                current_segment["end_frame"] = phase_info["frame_idx"]
-                current_segment["confidence"] = (current_segment["confidence"] + phase_info["confidence"]) / 2
+                categories[category] = 1
 
-        if current_segment is not None:
-            phase_segments.append(current_segment)
+        # Get category with most occurrences
+        predicted_category = max(categories, key=categories.get)
 
-        # Filtern von zu kurzen Segmenten
-        filtered_segments = [segment for segment in phase_segments
-                             if segment["end_frame"] - segment["start_frame"] >= min_phase_duration]
+        # Calculate confidence (percentage of frames with this prediction)
+        confidence = categories[predicted_category] / len(predictions)
 
-        # Wiederholungen zählen
-        repetitions = []
-        sequence_idx = 0
-        current_rep = {"phases": []}
-
-        for segment in filtered_segments:
-            if sequence_idx < len(completed_sequence) and segment["phase"] == completed_sequence[sequence_idx]:
-                current_rep["phases"].append({
-                    "phase": segment["phase"],
-                    "start_frame": segment["start_frame"],
-                    "end_frame": segment["end_frame"]
-                })
-
-                if segment["phase"] == count_on_phase:
-                    # Start- und Endframe der gesamten Wiederholung ermitteln
-                    if not "start_frame" in current_rep:
-                        current_rep["start_frame"] = segment["start_frame"]
-                    current_rep["end_frame"] = segment["end_frame"]
-
-                sequence_idx += 1
-
-                # Wenn die Sequenz komplett ist, Wiederholung speichern und zurücksetzen
-                if sequence_idx == len(completed_sequence):
-                    # Wenn die Wiederholung vollständig ist, für diese ein Feedback generieren
-                    rep_feedback = self.generate_rep_feedback(landmarks_sequence,
-                                                             current_rep["start_frame"],
-                                                             current_rep["end_frame"])
-                    current_rep["feedback"] = rep_feedback
-                    repetitions.append(current_rep)
-
-                    # Zurücksetzen für die nächste Wiederholung
-                    sequence_idx = 0
-                    current_rep = {"phases": []}
-            else:
-                # Wenn die Phase nicht der erwarteten Phase in der Sequenz entspricht,
-                # zurücksetzen und prüfen, ob es die erste Phase einer neuen Sequenz ist
-                if segment["phase"] == completed_sequence[0]:
-                    sequence_idx = 1
-                    current_rep = {
-                        "phases": [{
-                            "phase": segment["phase"],
-                            "start_frame": segment["start_frame"],
-                            "end_frame": segment["end_frame"]
-                        }]
-                    }
-
-                    if segment["phase"] == count_on_phase:
-                        current_rep["start_frame"] = segment["start_frame"]
-                        current_rep["end_frame"] = segment["end_frame"]
-                else:
-                    sequence_idx = 0
-                    current_rep = {"phases": []}
-
-        # Zusammenfassung der erkannten Wiederholungen
-        repetition_summary = {
-            "count": len(repetitions),
-            "repetitions": repetitions
+        return {
+            "exercise": self.exercise_name,
+            "predicted_category": predicted_category,
+            "confidence": confidence,
+            "frame_count": frame_count
         }
-
-        return repetition_summary
-
-    def generate_rep_feedback(self, landmarks_sequence, start_frame, end_frame):
-        """
-        Generiert Feedback für eine spezifische Wiederholung
-
-        Args:
-            landmarks_sequence: Sequenz der Landmarken des gesamten Videos
-            start_frame: Startframe der Wiederholung
-            end_frame: Endframe der Wiederholung
-
-        Returns:
-            Feedback für die Wiederholung
-        """
-        # Überprüfen, ob Landmarken für die gesamte Wiederholung vorhanden sind
-        if start_frame >= len(landmarks_sequence) or end_frame >= len(landmarks_sequence):
-            return {"text": "Keine ausreichenden Daten für die Analyse dieser Wiederholung"}
-
-        # Extrahieren der Landmarken für die Wiederholung
-        rep_landmarks = landmarks_sequence[start_frame:end_frame+1]
-
-        # Wenn zu wenige Landmarken für die Analyse vorhanden sind, abbrechen
-        if len(rep_landmarks) < self.pose_extractor.sequence_length:
-            # Wenn nötig, durch Interpolation auf die erforderliche Länge bringen
-            indices = np.linspace(0, len(rep_landmarks) - 1, self.pose_extractor.sequence_length, dtype=int)
-            rep_landmarks = [rep_landmarks[i] for i in indices]
-
-        # Wenn zu viele Landmarken vorhanden sind, durch Sampling auf die richtige Länge bringen
-        if len(rep_landmarks) > self.pose_extractor.sequence_length:
-            indices = np.linspace(0, len(rep_landmarks) - 1, self.pose_extractor.sequence_length, dtype=int)
-            rep_landmarks = [rep_landmarks[i] for i in indices]
-
-        # Normalisieren der Landmarken auf die erwartete Sequenzlänge
-        rep_landmarks = np.array(rep_landmarks)
-
-        # Laden des Hauptmodells für Übungsqualität
-        model = load_model(self.model_path)
-
-        # Übungsqualität für diese Wiederholung vorhersagen
-        prediction = model.predict(np.expand_dims(rep_landmarks, axis=0))[0]
-        categories = self.pose_extractor.get_categories()
-        predicted_class = np.argmax(prediction)
-
-        # Feedback zusammenstellen
-        feedback = {
-            "category": categories[predicted_class],
-            "confidence": float(prediction[predicted_class]),
-            "text": self.generate_feedback_text(categories[predicted_class]),
-            "all_probabilities": {cat: float(prob) for cat, prob in zip(categories, prediction)}
-        }
-
-        return feedback
 
     def generate_feedback_text(self, category_id):
+        """Generate feedback text for a given category ID"""
+        for category in self.pose_extractor.config["categories"]:
+            if str(category["id"]) == str(category_id):
+                return category["feedback"]
+        return "No specific feedback available."
+
+    def analyze_live(self, config_or_exercise_name):
         """
-        generates feedback text based on the predicted category.
+        Analyze exercise form in real-time using webcam input
 
         Args:
-            category_id: id of the predicted category
-
-        Returns:
-            Feedback-Text
+            config_or_exercise_name: Either an exercise name string or a config dictionary
         """
-        if self.pose_extractor.config and "categories" in self.pose_extractor.config:
-            for category in self.pose_extractor.config["categories"]:
-                if category["id"] == category_id:
-                    return category["feedback"]
+        # Handle whether we got a string exercise name or a config dict
+        if isinstance(config_or_exercise_name, str):
+            exercise_config = self.manager.get_exercise_config(config_or_exercise_name)
+        else:
+            exercise_config = config_or_exercise_name  # Use the config directly
 
-        return "Keine spezifische Analyse verfügbar für diese Kategorie."
+        # Update pose extractor with the config
+        self.pose_extractor = PoseExtractor(exercise_config)
+        self.model_path = os.path.join(self.model_dir, self.pose_extractor.get_model_name())
+        self.model = load_model(self.model_path)
 
-    def show_visualization(self, frames, delay=30):
-        """
-        Shows the visualization of the pose detection.
+        # Initialize MediaPipe Pose
+        mp_pose = mp.solutions.pose
+        pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-        Args:
-            frames: lists of frames with visualized landmarks
-            delay: delay between frames in ms
-        """
-        for i, frame in enumerate(frames):
-            cv2.imshow("Pose Detection", frame)
-            key = cv2.waitKey(delay)
-            if key == 27:  # ESC
+        # Set up webcam
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Error: Could not open webcam.")
+            return
+
+        # Get landmarks dictionary from config's relevant_landmarks
+        LANDMARKS = {}
+        for landmark_name in self.pose_extractor.config["relevant_landmarks"]:
+            try:
+                LANDMARKS[landmark_name] = getattr(mp_pose.PoseLandmark, landmark_name)
+            except AttributeError:
+                print(f"Warning: Landmark {landmark_name} not found in MediaPipe")
+
+        # Find the "not deep enough" category from config
+        correct_category_id = "correct"
+        not_deep_enough_id = next(
+            (cat["id"] for cat in self.pose_extractor.config["categories"]
+             if "deep" in cat["id"] or "tief" in cat["id"].lower()),
+            "not_deep_enough"
+        )
+
+        # Tracking variables
+        rep_counter = 0
+        rep_stage = "stand"  # stand or squat
+        min_knee_angle = 180
+        current_rep_feedback = {}
+        feedback_to_show = ""
+        show_feedback_until = 0
+        feedback_display_time = 5  # seconds
+        depth_threshold = 100  # Adjust based on exercise
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame")
                 break
 
-        cv2.destroyAllWindows()
+            # Flip the frame horizontally for a selfie-view display
+            frame = cv2.flip(frame, 1)
+            height, width, _ = frame.shape
 
+            # Convert to RGB
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Process the frame and get pose landmarks
+            results = pose.process(rgb_frame)
+
+            current_time = cv2.getTickCount() / cv2.getTickFrequency()
+
+            if results.pose_landmarks:
+                landmarks = results.pose_landmarks.landmark
+
+                # Calculate angles
+                def calculate_angle(a, b, c):
+                    a = np.array([a.x, a.y])
+                    b = np.array([b.x, b.y])
+                    c = np.array([c.x, c.y])
+                    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+                    angle = np.abs(np.degrees(radians))
+                    return 360 - angle if angle > 180 else angle
+
+                # Calculate relevant angles (example for squats)
+                left_knee_angle = calculate_angle(
+                    landmarks[LANDMARKS['LEFT_HIP']],
+                    landmarks[LANDMARKS['LEFT_KNEE']],
+                    landmarks[LANDMARKS['LEFT_ANKLE']]
+                ) if all(k in LANDMARKS for k in ['LEFT_HIP', 'LEFT_KNEE', 'LEFT_ANKLE']) else 180
+
+                right_knee_angle = calculate_angle(
+                    landmarks[LANDMARKS['RIGHT_HIP']],
+                    landmarks[LANDMARKS['RIGHT_KNEE']],
+                    landmarks[LANDMARKS['RIGHT_ANKLE']]
+                ) if all(k in LANDMARKS for k in ['RIGHT_HIP', 'RIGHT_KNEE', 'RIGHT_ANKLE']) else 180
+
+                left_back_angle = calculate_angle(
+                    landmarks[LANDMARKS['LEFT_SHOULDER']],
+                    landmarks[LANDMARKS['LEFT_HIP']],
+                    landmarks[LANDMARKS['LEFT_KNEE']]
+                ) if all(k in LANDMARKS for k in ['LEFT_SHOULDER', 'LEFT_HIP', 'LEFT_KNEE']) else 180
+
+                # Draw pose landmarks
+                mp.solutions.drawing_utils.draw_landmarks(
+                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+                # Add angle overlays
+                h, w = frame.shape[:2]
+                cv2.rectangle(frame, (10, h - 120), (250, h - 10), (0, 0, 0), -1)
+                cv2.putText(frame, f"Left Knee: {left_knee_angle:.1f}°",
+                            (20, h - 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                cv2.putText(frame, f"Right Knee: {right_knee_angle:.1f}°",
+                            (20, h - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                cv2.putText(frame, f"Back Angle: {left_back_angle:.1f}°",
+                            (20, h - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
+                # Perform analysis
+                try:
+                    landmarks_array = np.array([[landmark.x, landmark.y, landmark.z] for landmark in landmarks])
+                    prediction = self.predict_from_landmarks(landmarks_array)
+
+                    if prediction:
+                        current_prediction = prediction['predicted_category']
+                        prediction_confidence = prediction['confidence']
+
+                        # Calculate average knee angle
+                        avg_knee_angle = (left_knee_angle + right_knee_angle) / 2
+
+                        # Update minimum knee angle during rep
+                        if rep_stage == "squat" and avg_knee_angle < min_knee_angle:
+                            min_knee_angle = avg_knee_angle
+
+                        # Store feedback during rep (don't show it yet)
+                        if current_prediction != correct_category_id and current_prediction != not_deep_enough_id and prediction_confidence > 0.65:
+                            if (current_prediction not in current_rep_feedback or
+                                    prediction_confidence > current_rep_feedback[current_prediction]):
+                                current_rep_feedback[current_prediction] = prediction_confidence
+
+                        # Display form status
+                        cv2.putText(frame, f"Form: {current_prediction}",
+                                    (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        cv2.putText(frame, f"Confidence: {prediction_confidence:.2f}",
+                                    (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+                        # Repetition counter logic (example for squats)
+                        if avg_knee_angle < 120 and rep_stage == "stand":
+                            rep_stage = "squat"
+                            min_knee_angle = avg_knee_angle  # Reset min angle for new rep
+                        elif avg_knee_angle > 160 and rep_stage == "squat":
+                            rep_stage = "stand"
+                            rep_counter += 1
+
+                            # Check depth at the end of rep
+                            if min_knee_angle > depth_threshold:
+                                current_rep_feedback[not_deep_enough_id] = 1.0  # Add depth issue
+
+                            # Rep completed - prepare feedback
+                            if current_rep_feedback:
+                                # Format the feedback text
+                                issues = [self.generate_feedback_text(category)
+                                          for category in current_rep_feedback.keys()]
+                                feedback_to_show = f"Rep #{rep_counter} - Issues found:\n" + "\n".join(issues)
+                            else:
+                                feedback_to_show = f"Rep #{rep_counter} completed - Great form!"
+
+                            # Add depth info
+                            feedback_to_show += f"\nLowest knee angle: {min_knee_angle:.1f}°"
+
+                            # Set time to display feedback
+                            show_feedback_until = current_time + feedback_display_time
+
+                            # Clear for next rep
+                            current_rep_feedback = {}
+
+                        # Display rep counter
+                        cv2.putText(frame, f"Reps: {rep_counter}",
+                                    (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        if rep_stage == "squat":
+                            cv2.putText(frame, f"Min angle: {min_knee_angle:.1f}°",
+                                        (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                except Exception as e:
+                    print(f"Error during analysis: {e}")
+
+            # Add feedback text if applicable
+            if current_time < show_feedback_until and feedback_to_show:
+                overlay = frame.copy()
+
+                # Split feedback into multiple lines
+                feedback_lines = feedback_to_show.split('\n')
+                feedback_height = len(feedback_lines) * 30
+
+                cv2.rectangle(overlay, (0, height - 50 - feedback_height),
+                              (width, height), (0, 0, 0), -1)
+                cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+
+                # Display each line of feedback
+                for i, line in enumerate(feedback_lines):
+                    cv2.putText(frame, line,
+                                (10, height - 20 - (len(feedback_lines) - 1 - i) * 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+            # Display the frame
+            cv2.imshow('Exercise Analysis', frame)
+
+            # Break the loop if 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        # Clean up
+        pose.close()
+        cap.release()
+        cv2.destroyAllWindows()
+        print("Webcam analysis completed")
