@@ -96,20 +96,18 @@ class SquatAnalyzer(AnalyzerBase):
         Mit höherer Toleranz für die Ausrichtung.
         """
         if 'left_shoulder' not in coords or 'right_shoulder' not in coords:
-            return True  # Kann nicht überprüfen, also nehmen wir an, es ist ok
+            return True
 
-        # Berechne das Verhältnis der horizontalen zur vertikalen Schulterdistanz
-        # Bei seitlicher Position sollte die horizontale Distanz klein sein
         dx = abs(coords['left_shoulder'][0] - coords['right_shoulder'][0])
         dy = abs(coords['left_shoulder'][1] - coords['right_shoulder'][1])
 
-        if dy < 10:  # Vermeidet Division durch Null oder fast Null
+        if dy < 10:
             ratio = 0
         else:
             ratio = dx / dy
 
-        # Erhöhte Toleranz: Schwellenwert von 0.7 auf 1.0 erhöht
-        return ratio < 1.0
+        # tolerance
+        return ratio < 1.3
 
     def _check_knees_over_toes(self, coords):
         """
@@ -148,10 +146,8 @@ class SquatAnalyzer(AnalyzerBase):
         if 'left_knee_angle' not in joint_angles or 'right_knee_angle' not in joint_angles:
             return 'unknown'
 
-        # Durchschnittlicher Kniewinkel
         knee_angle = (joint_angles['left_knee_angle'] + joint_angles['right_knee_angle']) / 2
 
-        # Bestimme Bewegungsrichtung
         direction = self._calculate_movement_direction(knee_angle)
 
         # Phase basierend auf Winkeln und Richtung
@@ -194,6 +190,8 @@ class SquatAnalyzer(AnalyzerBase):
         if self.current_phase in ['down', 'bottom']:
             if not self._check_knees_over_toes(coords):
                 return 'knees_over_toes'
+
+        print(self.lowest_knee_angle)
 
         # 3. Überprüfe Tiefe nach Bottom-Phase beim Hochgehen
         if self.previous_phase == 'bottom' and self.current_phase == 'up':

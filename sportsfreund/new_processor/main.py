@@ -64,6 +64,8 @@ class ExerciseManager:
         """
         # Öffne das Video
         cap = cv2.VideoCapture(video_path)
+        cap.set(cv2.CAP_PROP_ZOOM, 0);
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 0);
 
         # Prüfe, ob das Video geöffnet werden konnte
         if not cap.isOpened():
