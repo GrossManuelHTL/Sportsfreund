@@ -2,7 +2,7 @@ import logging
 import time
 from analyzer_base import AnalyzerBase
 
-class ExerciseAnalyzer(AnalyzerBase):
+class SquatAnalyzer(AnalyzerBase):
     """
     Klasse zur Analyse von Übungen auf Basis der erkannten Pose und der Übungskonfiguration.
     Erbt von AnalyzerBase und implementiert übungsspezifische Funktionen.

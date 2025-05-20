@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 from pose_extractor import PoseExtractor
 from exercise_config import ExerciseConfig
-from exercise_analyzer import ExerciseAnalyzer
+from squat_analyzer import SquatAnalyzer
 
 # Konfiguriere Logging
 logging.basicConfig(
@@ -45,7 +45,7 @@ class ExerciseManager:
         self.pose_extractor = PoseExtractor()
 
         # Initialisiere Übungs-Analysator
-        self.analyzer = ExerciseAnalyzer(self.config)
+        self.analyzer = SquatAnalyzer(self.config)
 
         logging.info(f"ExerciseManager für {self.exercise_name} initialisiert")
 
@@ -127,14 +127,11 @@ class ExerciseManager:
 
                 continue
 
-            # Koordinaten und Winkel berechnen
             coords = self.pose_extractor.get_landmark_coordinates(landmarks, width, height)
             joint_angles = self.pose_extractor.calculate_joint_angles(coords)
 
-            # Frame analysieren
             analyzed_frame, status = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
 
-            # Debug-Ausgabe
             if self.debug and frame_number % 30 == 0:
                 print(f"Frame {frame_number}/{frame_count} ({frame_number/frame_count*100:.1f}%)")
                 print(f"Status: {status}")
@@ -145,37 +142,30 @@ class ExerciseManager:
                         print(f"  {name}: {angle:.1f}°")
                 print("-" * 40)
 
-            # Inkrementiere Zähler für verarbeitete Frames
             processed_frames += 1
 
-            # Zum Ausgabevideo hinzufügen
             if out:
                 out.write(analyzed_frame)
 
-            # Video anzeigen
             if show_video:
                 cv2.imshow('Exercise Analysis', analyzed_frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
-        # Ressourcen freigeben
         cap.release()
         if out:
             out.release()
         cv2.destroyAllWindows()
 
-        # Berechnungszeiten
         elapsed_time = time.time() - start_time
         time_per_frame = elapsed_time / processed_frames if processed_frames > 0 else 0
 
-        # Ergebnis-Log
         logging.info(f"Videoanalyse abgeschlossen.")
         logging.info(f"Verarbeitet: {processed_frames}/{frame_count} Frames")
         logging.info(f"Gesamtzeit: {elapsed_time:.2f} Sekunden")
         logging.info(f"Zeit pro Frame: {time_per_frame*1000:.2f} ms")
         logging.info(f"Wiederholungen: {self.analyzer.rep_count}")
 
-        # Analyseergebnis
         result = self.analyzer._get_status()
         result['time_per_frame_ms'] = time_per_frame * 1000
         result['total_time_seconds'] = elapsed_time
@@ -196,26 +186,21 @@ class ExerciseManager:
         Returns:
             dict: Analyseergebnisse
         """
-        # Öffne die Webcam
         cap = cv2.VideoCapture(camera_index)
 
-        # Prüfe, ob die Webcam geöffnet werden konnte
         if not cap.isOpened():
             logging.error(f"Fehler beim Öffnen der Webcam mit Index {camera_index}")
             return None
 
-        # Hole Video-Eigenschaften
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = 30  # Annahme für Webcam
 
-        # Vorbereitung für Ausgabevideo
         out = None
         if output_path:
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
-        # Leistungs-Tracking
         start_time = time.time()
         frame_number = 0
         fps_time = 0
@@ -223,10 +208,8 @@ class ExerciseManager:
         logging.info(f"Starte Webcam-Verarbeitung")
         logging.info(f"Video-Eigenschaften: {width}x{height}")
 
-        # Übungsanalyse zurücksetzen
         self.analyzer.reset()
 
-        # Verarbeite jeden Frame
         print("Drücken Sie 'q' zum Beenden")
         while cap.isOpened():
             ret, frame = cap.read()
@@ -237,46 +220,35 @@ class ExerciseManager:
             # Frame-Nummer
             frame_number += 1
 
-            # Frame spiegeln, wenn gewünscht
             if flip:
                 frame = cv2.flip(frame, 1)
 
-            # Aktuelle FPS berechnen
             elapsed_time = time.time() - start_time
             fps = frame_number / elapsed_time
 
-            # Frame mit dem Pose-Extraktor verarbeiten
             landmarks, processed_frame = self.pose_extractor.extract_landmarks(frame)
 
-            # Wenn keine Landmarken erkannt wurden
             if landmarks is None:
-                # FPS anzeigen
                 cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50),
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-                # Zum Ausgabevideo hinzufügen
                 if out:
                     out.write(frame)
 
-                # Video anzeigen
                 cv2.imshow('Exercise Analysis', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
                 continue
 
-            # Koordinaten und Winkel berechnen
             coords = self.pose_extractor.get_landmark_coordinates(landmarks, width, height)
             joint_angles = self.pose_extractor.calculate_joint_angles(coords)
 
-            # Frame analysieren
             analyzed_frame, status = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
 
-            # FPS anzeigen
             cv2.putText(analyzed_frame, f"FPS: {fps:.1f}", (10, 50),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            # Debug-Ausgabe
             if self.debug and frame_number % 30 == 0:
                 print(f"Frame {frame_number}, FPS: {fps:.1f}")
                 print(f"Status: {status}")
@@ -291,18 +263,15 @@ class ExerciseManager:
             if out:
                 out.write(analyzed_frame)
 
-            # Video anzeigen
             cv2.imshow('Exercise Analysis', analyzed_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # Ressourcen freigeben
         cap.release()
         if out:
             out.release()
         cv2.destroyAllWindows()
 
-        # Ergebnis-Log
         elapsed_time = time.time() - start_time
         logging.info(f"Webcam-Analyse beendet.")
         logging.info(f"Gesamtzeit: {elapsed_time:.2f} Sekunden")
@@ -310,7 +279,6 @@ class ExerciseManager:
         logging.info(f"Durchschnittliche FPS: {frame_number/elapsed_time:.1f}")
         logging.info(f"Wiederholungen: {self.analyzer.rep_count}")
 
-        # Analyseergebnis
         result = self.analyzer._get_status()
         result['average_fps'] = frame_number / elapsed_time
         result['total_time_seconds'] = elapsed_time
@@ -332,18 +300,15 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Fitness-Übungsanalysator')
 
-    # Erforderliche Argumente
     parser.add_argument('--exercise', type=str, required=True,
                         help='Name der zu analysierenden Übung')
 
-    # Eingabequelle
     source_group = parser.add_mutually_exclusive_group(required=True)
     source_group.add_argument('--video', type=str,
                               help='Pfad zum Eingabevideo')
     source_group.add_argument('--webcam', type=int, default=None,
                               help='Index der Webcam (0 für Standardkamera)')
 
-    # Optionale Argumente
     parser.add_argument('--output', type=str,
                         help='Pfad für das Ausgabevideo')
     parser.add_argument('--config', type=str,
@@ -357,7 +322,7 @@ def main():
 
     args = parser.parse_args()
 
-    # ExerciseManager initialisieren
+
     exercise_manager = ExerciseManager(
         exercise_name=args.exercise,
         config_path=args.config,
@@ -365,7 +330,7 @@ def main():
     )
 
     try:
-        # Verarbeitung basierend auf der Eingabequelle
+
         if args.video:
             result = exercise_manager.process_video(
                 args.video,
@@ -380,7 +345,6 @@ def main():
                 flip=args.flip
             )
 
-        # Ergebnisse anzeigen
         print("\nAnalyse-Ergebnisse:")
         print(f"Übung: {result['exercise']}")
         print(f"Wiederholungen: {result['rep_count']}")
@@ -388,7 +352,6 @@ def main():
         print(f"Zeit: {result['time_elapsed']:.2f} Sekunden")
 
     finally:
-        # Ressourcen freigeben
         exercise_manager.release()
 
 
