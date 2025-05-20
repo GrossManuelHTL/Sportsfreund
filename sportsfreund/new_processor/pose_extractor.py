@@ -75,6 +75,48 @@ class PoseExtractor:
                 landmark_drawing_spec=self.mp_drawing_styles.get_default_pose_landmarks_style()
             )
 
+            # Koordinaten für die Winkelberechnung abrufen
+            img_height, img_width, _ = frame.shape
+            coords = self.get_landmark_coordinates(results.pose_landmarks, img_width, img_height)
+
+            # Winkel berechnen
+            joint_angles = self.calculate_joint_angles(coords)
+
+            # Winkel auf dem Bild anzeigen
+            if joint_angles and coords:
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.5
+                color = (0, 255, 0)  # Grün
+                thickness = 2
+
+                # Kniewinkel anzeigen
+                if 'left_knee_angle' in joint_angles and 'left_knee' in coords:
+                    pos = (coords['left_knee'][0] + 10, coords['left_knee'][1])
+                    text = f"{joint_angles['left_knee_angle']:.1f}°"
+                    cv2.putText(processed_frame, text, pos, font, font_scale, color, thickness)
+
+                if 'right_knee_angle' in joint_angles and 'right_knee' in coords:
+                    pos = (coords['right_knee'][0] + 10, coords['right_knee'][1])
+                    text = f"{joint_angles['right_knee_angle']:.1f}°"
+                    cv2.putText(processed_frame, text, pos, font, font_scale, color, thickness)
+
+                # Hüftwinkel anzeigen
+                if 'left_hip_angle' in joint_angles and 'left_hip' in coords:
+                    pos = (coords['left_hip'][0] + 10, coords['left_hip'][1])
+                    text = f"{joint_angles['left_hip_angle']:.1f}°"
+                    cv2.putText(processed_frame, text, pos, font, font_scale, color, thickness)
+
+                if 'right_hip_angle' in joint_angles and 'right_hip' in coords:
+                    pos = (coords['right_hip'][0] + 10, coords['right_hip'][1])
+                    text = f"{joint_angles['right_hip_angle']:.1f}°"
+                    cv2.putText(processed_frame, text, pos, font, font_scale, color, thickness)
+
+                # Rückenwinkel anzeigen, oben auf dem Bild
+                if 'back_angle' in joint_angles:
+                    pos = (20, 30)  # Position oben links
+                    text = f"Rücken: {joint_angles['back_angle']:.1f}°"
+                    cv2.putText(processed_frame, text, pos, font, font_scale, color, thickness)
+
         return results.pose_landmarks, processed_frame
 
     def get_landmark_coordinates(self, landmarks, img_width, img_height):
