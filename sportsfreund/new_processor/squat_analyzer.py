@@ -133,14 +133,6 @@ class SquatAnalyzer(AnalyzerBase):
         # Glätte die Winkel für stabilere Messungen
         smoothed_angles = self._smooth_angles(joint_angles)
 
-        # Prüfe Regeln für den Rücken
-        if 'back_angle' in smoothed_angles:
-            back_angle = smoothed_angles['back_angle']
-
-            # Rücken zu stark gekrümmt (nach vorne oder nach hinten)
-            if back_angle < 75 or back_angle > 100:
-                return 'back_not_straight'
-
         # Prüfe Regeln für die Knie (für Kniebeugen)
         if 'left_knee_angle' in smoothed_angles and 'right_knee_angle' in smoothed_angles:
             left_knee = smoothed_angles['left_knee_angle']
