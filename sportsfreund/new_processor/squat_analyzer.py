@@ -41,14 +41,6 @@ class SquatAnalyzer(AnalyzerBase):
         if not joint_angles or not coords:
             return None
 
-        # Prüfe Regeln für den Rücken
-        if 'back_angle' in joint_angles:
-            back_angle = joint_angles['back_angle']
-
-            # Rücken zu stark gekrümmt (nach vorne oder nach hinten)
-            if back_angle < 80 or back_angle > 100:
-                return 'back_not_straight'
-
         # Prüfe Regeln für die Knie (für Kniebeugen)
         if 'left_knee_angle' in joint_angles and 'right_knee_angle' in joint_angles:
             left_knee = joint_angles['left_knee_angle']
