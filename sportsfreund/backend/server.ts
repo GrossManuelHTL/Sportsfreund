@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use("/raspyfit", raspyfitRouter);
+app.use("/sportsfreund", raspyfitRouter);
 
 
 Database.initialize().then(() => {

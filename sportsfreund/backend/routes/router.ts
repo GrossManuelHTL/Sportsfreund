@@ -64,6 +64,30 @@ router.patch("/session/:id/endtime", async (_req, _res) => {
   }
 });
 
+router.patch("/sessions/exercise/:id/endtime", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await Database.initialize();
+
+    const repo = Database.getRepo(SessionExercise);
+    const sessionExercise = await repo.findOneBy({ id: parseInt(id) });
+
+    if (!sessionExercise) {
+      res.status(404).send("SessionExercise not found");
+      return;
+    }
+
+    sessionExercise.end = new Date();
+    await repo.save(sessionExercise);
+
+    res.status(200).json("SessionExercise beendet");
+  } catch (error: any) {
+    res.status(500).json("Datenbankfehler: " + error.message);
+  }
+});
+
+
 router.post("/sessions/exercise", async (req, res) =>{
   try{
     const repo = Database.getRepo(SessionExercise);
