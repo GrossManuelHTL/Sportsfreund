@@ -3,10 +3,9 @@ import cv2
 import time
 import logging
 import argparse
-import numpy as np
-from pose_extractor import PoseExtractor
+from poseextraction.pose_extractor import PoseExtractor
 from exercise_config import ExerciseConfig
-from squat_analyzer import SquatAnalyzer
+from analyzers.squat_analyzer import SquatAnalyzer
 
 # Konfiguriere Logging
 logging.basicConfig(
@@ -30,12 +29,10 @@ class ExerciseManager:
         self.debug = debug
         self.exercise_name = exercise_name
 
-        # Wenn kein Konfigurationspfad angegeben, versuche einen Standardpfad
         if config_path is None and exercise_name is not None:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(base_dir, exercise_name, 'config.json')
+            config_path = os.path.join(base_dir, 'exercises', exercise_name, 'config.json')
 
-        # Lade Konfiguration
         self.config = ExerciseConfig(config_path)
 
         if not self.exercise_name:
@@ -295,6 +292,20 @@ class ExerciseManager:
         if hasattr(self, 'pose_extractor'):
             self.pose_extractor.release()
 
+def list_exercises():
+    """
+    Listet alle verfügbaren Übungen aus dem exercises-Ordner auf.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    exercises_dir = os.path.join(base_dir, 'exercises')
+
+    available_exercises = []
+    for item in os.listdir(exercises_dir):
+        item_path = os.path.join(exercises_dir, item)
+        if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, 'config.json')):
+            available_exercises.append(item)
+
+    return available_exercises
 
 def main():
     """
@@ -302,15 +313,20 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Fitness-Übungsanalysator')
 
-    parser.add_argument('--exercise', type=str, required=True,
+    parser.add_argument('--exercise', type=str,
                         help='Name der zu analysierenden Übung')
 
-    source_group = parser.add_mutually_exclusive_group(required=True)
-    source_group.add_argument('--video', type=str,
-                              help='Pfad zum Eingabevideo')
-    source_group.add_argument('--webcam', type=int, default=None,
-                              help='Index der Webcam (0 für Standardkamera)')
+    # Hauptmodus-Gruppe
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument('--video', type=str,
+                          help='Pfad zum Eingabevideo')
+    mode_group.add_argument('--webcam', action='store_true',
+                          help='Webcam-Modus verwenden')
+    mode_group.add_argument('--interactive', action='store_true',
+                          help='Interaktiver Trainingsmodus')
 
+    parser.add_argument('--camera', type=int, default=0,
+                        help='Index der Webcam (0 für Standardkamera)')
     parser.add_argument('--output', type=str,
                         help='Pfad für das Ausgabevideo')
     parser.add_argument('--config', type=str,
@@ -324,38 +340,125 @@ def main():
 
     args = parser.parse_args()
 
+    if args.interactive:
+        # Interaktiver Trainingsmodus
+        from interactive_trainer import InteractiveTrainer
 
-    exercise_manager = ExerciseManager(
-        exercise_name=args.exercise,
-        config_path=args.config,
-        debug=args.debug
-    )
+        print("\n=== Willkommen beim Fitness-Übungsanalysator - Interaktiver Modus ===\n")
 
-    try:
+        trainer = InteractiveTrainer(
+            exercise=args.exercise,
+            camera_index=args.camera,
+            debug=args.debug
+        )
 
-        if args.video:
-            result = exercise_manager.process_video(
-                args.video,
-                output_path=args.output,
-                show_video=not args.no_display,
-                flip=args.flip
-            )
-        else:  # Webcam
-            result = exercise_manager.process_webcam(
-                camera_index=args.webcam,
-                output_path=args.output,
-                flip=args.flip
-            )
+        try:
+            if args.exercise:
+                available_exercises = trainer.list_exercises()
+                if args.exercise in available_exercises:
+                    print(f"Starte direkt mit Übung: {args.exercise}")
 
-        print("\nAnalyse-Ergebnisse:")
-        print(f"Übung: {result['exercise']}")
-        print(f"Wiederholungen: {result['rep_count']}")
-        print(f"Aktuelle Phase: {result['current_phase']}")
-        print(f"Zeit: {result['time_elapsed']:.2f} Sekunden")
+                    # Anzahl der Wiederholungen
+                    reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
 
-    finally:
-        exercise_manager.release()
+                    trainer.explain_exercise(args.exercise)
+                    input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
+                    trainer.start_countdown()
+                    trainer.start_exercise(args.exercise, reps_goal)
+                else:
+                    print(f"Übung '{args.exercise}' nicht gefunden!")
+                    print("Verfügbare Übungen:")
+                    for exercise in available_exercises:
+                        print(f" - {exercise}")
+            else:
+                # Übungsauswahl
+                available_exercises = trainer.list_exercises()
+
+                print("Verfügbare Übungen:")
+                for i, ex in enumerate(available_exercises, 1):
+                    print(f"{i}. {ex}")
+
+                exercise_choice = input("\nWähle eine Übung (Name oder Nummer): ")
+
+                # Prüfe, ob eine Nummer eingegeben wurde
+                try:
+                    exercise_index = int(exercise_choice) - 1
+                    if 0 <= exercise_index < len(available_exercises):
+                        exercise_name = available_exercises[exercise_index]
+                    else:
+                        print("Ungültige Nummer!")
+                        return
+                except ValueError:
+                    # Es wurde ein Name eingegeben
+                    exercise_name = exercise_choice.lower()
+                    if exercise_name not in available_exercises:
+                        print(f"Übung '{exercise_name}' nicht gefunden!")
+                        return
+
+                # Anzahl der Wiederholungen festlegen
+                try:
+                    reps_input = input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ")
+                    reps_goal = int(reps_input) if reps_input.strip() else trainer.reps_goal
+                except ValueError:
+                    print("Ungültige Eingabe für Wiederholungen. Standardwert wird verwendet.")
+                    reps_goal = trainer.reps_goal
+
+                # Übung erklären und starten
+                if trainer.explain_exercise(exercise_name):
+                    input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
+                    trainer.start_countdown()
+                    trainer.start_exercise(exercise_name, reps_goal)
+
+        except KeyboardInterrupt:
+            print("\nProgramm vom Benutzer unterbrochen.")
+        finally:
+            if trainer.exercise_manager:
+                trainer.exercise_manager.release()
+
+    else:
+        # Wenn keine Übung angegeben wurde und wir nicht im interaktiven Modus sind
+        if not args.exercise:
+            print("Verfügbare Übungen:")
+            for exercise in list_exercises():
+                print(f" - {exercise}")
+            print("\nBitte --exercise ÜBUNGSNAME angeben.")
+            return
+
+        # Normaler Analyse-Modus
+        exercise_manager = ExerciseManager(
+            exercise_name=args.exercise,
+            config_path=args.config,
+            debug=args.debug
+        )
+
+        try:
+            if args.video:
+                # Video-Modus
+                result = exercise_manager.process_video(
+                    args.video,
+                    output_path=args.output,
+                    show_video=not args.no_display,
+                    flip=args.flip
+                )
+            elif args.webcam:
+                # Webcam-Modus
+                result = exercise_manager.process_webcam(
+                    camera_index=args.camera,
+                    output_path=args.output,
+                    flip=args.flip
+                )
+
+            if result:
+                print("\nAnalyse-Ergebnisse:")
+                print(f"Übung: {result['exercise']}")
+                print(f"Wiederholungen: {result['rep_count']}")
+                print(f"Aktuelle Phase: {result['current_phase']}")
+                print(f"Zeit: {result['time_elapsed']:.2f} Sekunden")
+
+        finally:
+            exercise_manager.release()
 
 
 if __name__ == "__main__":
     main()
+

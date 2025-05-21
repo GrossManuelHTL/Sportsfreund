@@ -3,7 +3,7 @@ import time
 import numpy as np
 import os
 import json
-from analyzer_base import AnalyzerBase
+from .analyzer_base import AnalyzerBase
 
 class SquatAnalyzer(AnalyzerBase):
     """
@@ -164,7 +164,6 @@ class SquatAnalyzer(AnalyzerBase):
         elif direction == 'up':
             return 'up'
         else:
-            # Fallback basierend auf vorherigem Zustand und Winkel
             if self.previous_phase == 'down' or self.previous_phase == 'unknown':
                 return 'down'
             else:
@@ -179,21 +178,15 @@ class SquatAnalyzer(AnalyzerBase):
 
         smoothed_angles = self._smooth_angles(joint_angles)
 
-        # Durchschnittlicher Kniewinkel
         knee_angle = (smoothed_angles['left_knee_angle'] + smoothed_angles['right_knee_angle']) / 2
 
-        # 1. Überprüfe seitliche Position - hat höchste Priorität
         if not self._check_side_position(coords):
             return 'side_position'
 
-        # 2. Überprüfe Knieposition in Down und Bottom Phase
         if self.current_phase in ['down', 'bottom']:
             if not self._check_knees_over_toes(coords):
                 return 'knees_over_toes'
 
-        print(self.lowest_knee_angle)
-
-        # 3. Überprüfe Tiefe nach Bottom-Phase beim Hochgehen
         if self.previous_phase == 'bottom' and self.current_phase == 'up':
             if not self._check_squat_depth(self.lowest_knee_angle):
                 return 'squat_depth'

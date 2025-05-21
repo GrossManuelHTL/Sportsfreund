@@ -1,14 +1,11 @@
-import json
 import time
 import os
 import cv2
 import logging
 import argparse
-import numpy as np
-import threading
-import pyttsx3
 from enum import Enum
 from main import ExerciseManager
+from instructions.audio_instruction import InstructionExplainer
 
 # Konfiguriere Logging
 logging.basicConfig(
@@ -25,83 +22,43 @@ class WorkoutState(Enum):
     COMPLETED = 5
 
 class InteractiveTrainer:
-    """
-    Interaktiver Trainer für Übungen mit ausführlicher Erklärung und angeleiteter Ausführung.
-    """
-    def __init__(self, camera_index=0, debug=True):
-        """
-        Initialisiert den InteractiveTrainer.
-
-        Args:
-            camera_index: Index der Kamera
-            debug: Debug-Modus aktivieren
-        """
+    def __init__(self, exercise=None, camera_index=0, debug=True):
         self.camera_index = camera_index
         self.debug = debug
         self.exercise_manager = None
         self.state = WorkoutState.WAITING_FOR_SELECTION
         self.current_exercise = None
         self.countdown_seconds = 5
-        self.reps_per_feedback = 5
-        self.reps_goal = 10  # Standardwert, kann geändert werden
-        self.tolerance = 0.15  # 15% Toleranz für Fehlererkennung
-
-        # Sprachausgabe
-        self.speech_engine = pyttsx3.init()
-        self.speech_engine.setProperty('rate', 150)  # Etwas langsamer sprechen
-
-        # Lade Übungsanleitungen
-        self._load_exercise_instructions()
-
-    def _load_exercise_instructions(self):
-        """Lädt Übungsanleitungen aus der JSON-Datei"""
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        instructions_path = os.path.join(base_dir, 'exercise_instructions.json')
-
-        try:
-            with open(instructions_path, 'r', encoding='utf-8') as file:
-                self.exercise_instructions = json.load(file)
-            logging.info(f"Übungsanleitungen geladen. Verfügbare Übungen: {', '.join(self.exercise_instructions.keys())}")
-        except Exception as e:
-            logging.error(f"Fehler beim Laden der Übungsanleitungen: {e}")
-            self.exercise_instructions = {}
-
-    def _speak(self, text, wait=True):
-        """Aussprache eines Textes"""
-
+        self.reps_per_feedback = 4  # Feedback alle 4 Wiederholungen
+        self.reps_goal = 10
+        self.exercise = exercise
+        self.instruction_explainer = None
 
     def list_exercises(self):
-        """Zeigt eine Liste aller verfügbaren Übungen an"""
-        print("\nVerfügbare Übungen:")
-        for i, exercise in enumerate(self.exercise_instructions.keys(), 1):
-            print(f"{i}. {exercise}")
+        """Listet alle verfügbaren Übungen aus dem exercises-Ordner auf"""
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        exercises_dir = os.path.join(base_dir, 'exercises')
 
-        return list(self.exercise_instructions.keys())
+        available_exercises = []
+        for item in os.listdir(exercises_dir):
+            item_path = os.path.join(exercises_dir, item)
+            if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, 'config.json')):
+                available_exercises.append(item)
+
+        return available_exercises
 
     def explain_exercise(self, exercise_name):
-        """Erklärt eine Übung ausführlich"""
-        if exercise_name not in self.exercise_instructions:
-            print(f"Übung '{exercise_name}' nicht gefunden!")
-            return False
-
+        """Erklärt die Übung mit Audioanweisungen"""
         self.state = WorkoutState.EXPLAINING
-        print(f"\n===== Erklärung: {exercise_name.upper()} =====\n")
+        print(f"\n=== Übungsanleitung: {exercise_name} ===")
 
-        instructions = self.exercise_instructions[exercise_name]
+        self.instruction_explainer = InstructionExplainer(exercise_name)
 
-        print("Vorbereitung:")
-        self._speak(f"Vorbereitung für {exercise_name}")
-        for i, instruction in enumerate(instructions["preparation_instructions"], 1):
-            print(f"{i}. {instruction}")
-            self._speak(instruction)
-            time.sleep(0.1)
+        print("\nVorbereitung der Übung:")
+        self.instruction_explainer.speak_prep_instruction()
 
-        print("\nAusführung:")
-        self._speak("Ausführung der Übung")
-        for i, instruction in enumerate(instructions["execution_instructions"], 1):
-            print(f"{i}. {instruction}")
-            self._speak(instruction)
-            time.sleep(0.1)
+        print("\nAusführung der Übung:")
+        self.instruction_explainer.speak_exec_instruction()
 
         return True
 
@@ -109,11 +66,16 @@ class InteractiveTrainer:
         """Startet einen Countdown vor Beginn der Übung"""
         self.state = WorkoutState.COUNTDOWN
         print("\nBereite dich vor...")
-        self._speak("Bereite dich vor. Der Countdown beginnt.")
+        self.instruction_explainer.say_sentence("Bereite dich vor...", False)
 
+        # Countdown von 5 Sekunden
+        for i in range(self.countdown_seconds, 0, -1):
+            print(f"{i}...")
+            self.instruction_explainer.say_sentence(str(i), False)
+            time.sleep(1)
 
         print("LOS!")
-        self._speak("Los! Starte die Übung.", wait=False)
+        self.instruction_explainer.say_sentence("Los geht's!", True)
         self.state = WorkoutState.EXERCISING
 
     def _generate_exercise_cues(self, exercise_name, phase):
@@ -144,14 +106,13 @@ class InteractiveTrainer:
 
         # Initialisiere ExerciseManager
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(base_dir, exercise_name, 'config.json')
+        config_path = os.path.join(base_dir, 'exercises', exercise_name, 'config.json')
 
         self.exercise_manager = ExerciseManager(
             exercise_name=exercise_name,
             config_path=config_path,
             debug=self.debug
         )
-
 
         self.current_exercise = exercise_name
         self.current_rep = 0
@@ -216,23 +177,24 @@ class InteractiveTrainer:
             current_phase = self.exercise_manager.analyzer.current_phase
             if current_phase != self.last_phase and current_phase is not None:
                 cue = self._generate_exercise_cues(exercise_name, current_phase)
-                self._speak(cue, wait=False)
+                print(f"Phase: {current_phase} - {cue}")
                 self.last_phase = current_phase
 
             # Rep-Counter prüfen
             if self.exercise_manager.analyzer.rep_count > self.current_rep:
                 self.current_rep = self.exercise_manager.analyzer.rep_count
                 print(f"Wiederholung {self.current_rep} abgeschlossen!")
+                self.instruction_explainer.say_sentence(f"Wiederholung {self.current_rep}", False)
 
-                # Bei jeder 5. Wiederholung Feedback geben
+                # Bei jeder 4. Wiederholung Feedback geben
                 if self.current_rep % self.reps_per_feedback == 0 and self.current_rep > self.last_feedback_rep:
                     self._give_feedback()
                     self.last_feedback_rep = self.current_rep
 
                 # Ziel erreicht?
                 if self.current_rep >= self.reps_goal:
-                    self._speak("Gut gemacht! Du hast dein Ziel erreicht.", wait=False)
                     print("\nZiel erreicht! Super gemacht!")
+                    self.instruction_explainer.say_sentence("Ziel erreicht! Super gemacht!", True)
                     time.sleep(3)  # Zeit zum Feiern
                     break
 
@@ -257,7 +219,6 @@ class InteractiveTrainer:
         feedback_history = self.exercise_manager.analyzer.feedback_history
 
         if not feedback_history:
-            self._speak("Gute Arbeit! Mach weiter so.", wait=False)
             return
 
         # Zähle die Häufigkeit jeder Feedback-Art
@@ -272,76 +233,14 @@ class InteractiveTrainer:
             if count / total_feedbacks > 0.4 and feedback_id != 'good_form':
                 feedback_text = self.exercise_manager.analyzer.feedback_map[feedback_id][0]
                 print(f"\nFeedback: {feedback_text}")
-                self._speak(feedback_text, wait=False)
+                self.instruction_explainer.say_sentence(feedback_text, False)
                 return
 
-        # Wenn kein spezifisches Problem erkannt wurde oder die Ausführung gut ist
-        self._speak("Gute Ausführung! Weiter so.", wait=False)
-
-    def start_interactive_session(self):
-        """Startet eine interaktive Trainingseinheit"""
-        print("\n=== Willkommen beim interaktiven Fitnesstrainer! ===\n")
-        self._speak("Willkommen beim interaktiven Fitnesstrainer!")
-
-        while True:
-            if self.state == WorkoutState.WAITING_FOR_SELECTION:
-                print("\nWähle eine Option:")
-                print("1. Übung auswählen")
-                print("2. Beenden")
-
-                choice = input("Deine Wahl (1-2): ")
-
-                if choice == '1':
-                    available_exercises = self.list_exercises()
-
-                    exercise_choice = input("\nWähle eine Übung (Name oder Nummer): ")
-
-                    # Prüfe, ob eine Nummer eingegeben wurde
-                    try:
-                        exercise_index = int(exercise_choice) - 1
-                        if 0 <= exercise_index < len(available_exercises):
-                            exercise_name = available_exercises[exercise_index]
-                        else:
-                            print("Ungültige Nummer!")
-                            continue
-                    except ValueError:
-                        # Es wurde ein Name eingegeben
-                        exercise_name = exercise_choice.lower()
-                        if exercise_name not in available_exercises:
-                            print(f"Übung '{exercise_name}' nicht gefunden!")
-                            continue
-
-                    # Anzahl der Wiederholungen festlegen
-                    try:
-                        reps_input = input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {self.reps_goal}): ")
-                        reps_goal = int(reps_input) if reps_input.strip() else self.reps_goal
-                    except ValueError:
-                        print("Ungültige Eingabe für Wiederholungen. Standardwert wird verwendet.")
-                        reps_goal = self.reps_goal
-
-                    # Übung erklären
-                    if self.explain_exercise(exercise_name):
-                        input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                        self.start_countdown()
-                        self.start_exercise(exercise_name, reps_goal)
-
-                elif choice == '2':
-                    print("\nTraining beendet. Bis zum nächsten Mal!")
-                    self._speak("Training beendet. Bis zum nächsten Mal!")
-                    break
-
-                else:
-                    print("Ungültige Eingabe. Bitte wähle 1 oder 2.")
-
-            # Nach Abschluss einer Übung zurück zur Auswahl
-            elif self.state == WorkoutState.COMPLETED:
-                self.state = WorkoutState.WAITING_FOR_SELECTION
-                input("\nDrücke ENTER, um fortzufahren...")
-
-        # Ressourcen freigeben
-        if self.exercise_manager:
-            self.exercise_manager.release()
-        self.speech_engine.stop()
+        # Wenn die Ausführung gut ist
+        if 'good_form' in feedback_counter:
+            good_feedback = "Gut gemacht! Weiter so!"
+            print(f"\nFeedback: {good_feedback}")
+            self.instruction_explainer.say_sentence(good_feedback, False)
 
 def main():
     """
@@ -349,6 +248,8 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Interaktiver Fitness-Trainer')
 
+    parser.add_argument('--exercise', type=str, default=None,
+                        help='Name der Übung')
     parser.add_argument('--camera', type=int, default=0,
                         help='Index der Webcam (0 für Standardkamera)')
     parser.add_argument('--debug', action='store_true',
@@ -357,12 +258,66 @@ def main():
     args = parser.parse_args()
 
     trainer = InteractiveTrainer(
+        exercise=args.exercise,
         camera_index=args.camera,
         debug=args.debug
     )
 
     try:
-        trainer.start_interactive_session()
+        # Wähle direkt eine Übung und starte
+        if args.exercise:
+            available_exercises = trainer.list_exercises()
+            if args.exercise in available_exercises:
+                print(f"Starte direkt mit Übung: {args.exercise}")
+
+                # Anzahl der Wiederholungen
+                reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
+
+                trainer.explain_exercise(args.exercise)
+                input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
+                trainer.start_countdown()
+                trainer.start_exercise(args.exercise, reps_goal)
+            else:
+                print(f"Übung '{args.exercise}' nicht gefunden!")
+        else:
+            print("\n=== Willkommen beim interaktiven Fitnesstrainer! ===\n")
+            available_exercises = trainer.list_exercises()
+
+            print("Verfügbare Übungen:")
+            for i, ex in enumerate(available_exercises, 1):
+                print(f"{i}. {ex}")
+
+            exercise_choice = input("\nWähle eine Übung (Name oder Nummer): ")
+
+            # Prüfe, ob eine Nummer eingegeben wurde
+            try:
+                exercise_index = int(exercise_choice) - 1
+                if 0 <= exercise_index < len(available_exercises):
+                    exercise_name = available_exercises[exercise_index]
+                else:
+                    print("Ungültige Nummer!")
+                    return
+            except ValueError:
+                # Es wurde ein Name eingegeben
+                exercise_name = exercise_choice.lower()
+                if exercise_name not in available_exercises:
+                    print(f"Übung '{exercise_name}' nicht gefunden!")
+                    return
+
+            # Anzahl der Wiederholungen festlegen
+            try:
+                reps_input = input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ")
+                reps_goal = int(reps_input) if reps_input.strip() else trainer.reps_goal
+            except ValueError:
+                print("Ungültige Eingabe für Wiederholungen. Standardwert wird verwendet.")
+                reps_goal = trainer.reps_goal
+
+            # Übung erklären
+            if trainer.explain_exercise(exercise_name):
+                input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
+                trainer.start_countdown()
+                trainer.start_exercise(exercise_name, reps_goal)
+
     except KeyboardInterrupt:
         print("\nProgramm vom Benutzer unterbrochen.")
     finally:
@@ -371,3 +326,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

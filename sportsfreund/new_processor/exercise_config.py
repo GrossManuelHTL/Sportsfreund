@@ -49,12 +49,6 @@ class ExerciseConfig:
             return False
 
     def _validate_config(self):
-        """
-        Validiert die Konfigurationsdaten.
-
-        Returns:
-            bool: True wenn gültig, False sonst
-        """
         required_fields = ['name', 'joints', 'phases', 'phase_criteria']
 
         if not self.config:
@@ -75,57 +69,24 @@ class ExerciseConfig:
         return True
 
     def get_config(self):
-        """
-        Gibt die aktuelle Konfiguration zurück.
-
-        Returns:
-            dict: Die Konfiguration
-        """
         return self.config
 
     def get_exercise_name(self):
-        """
-        Gibt den Namen der Übung zurück.
-
-        Returns:
-            str: Name der Übung
-        """
         if not self.config:
             return None
         return self.config.get('name')
 
     def get_joints(self):
-        """
-        Gibt die relevanten Gelenke für die Übung zurück.
-
-        Returns:
-            list: Liste der relevanten Gelenke
-        """
         if not self.config:
             return []
         return self.config.get('joints', [])
 
     def get_phases(self):
-        """
-        Gibt die definierten Phasen der Übung zurück.
-
-        Returns:
-            list: Liste der Phasen
-        """
         if not self.config:
             return []
         return self.config.get('phases', [])
 
     def get_phase_criteria(self, phase=None):
-        """
-        Gibt die Kriterien für eine bestimmte Phase zurück.
-
-        Args:
-            phase: Name der Phase oder None für alle Phasen
-
-        Returns:
-            dict: Kriterien für die Phase(n)
-        """
         if not self.config:
             return {}
 
@@ -136,23 +97,11 @@ class ExerciseConfig:
         return criteria
 
     def get_tolerance(self):
-        """
-        Gibt den Toleranzwert für die Übung zurück.
-
-        Returns:
-            float: Toleranzwert
-        """
         if not self.config:
             return 0.1
         return self.config.get('tolerance', 0.1)
 
     def get_feedback_rules(self):
-        """
-        Gibt die Feedback-Regeln für die Übung zurück.
-
-        Returns:
-            dict: Feedback-Regeln
-        """
         if not self.config:
             return {}
         return self.config.get('feedback_rules', {})
