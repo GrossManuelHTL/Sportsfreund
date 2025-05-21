@@ -176,7 +176,7 @@ class SquatAnalyzer(AnalyzerBase):
 
         # tolerance
         #logging.info(ratio)
-        return ratio < 4.5
+        return ratio < 5
 
     def _check_knees_over_toes(self, coords, phase):
         """
@@ -208,10 +208,12 @@ class SquatAnalyzer(AnalyzerBase):
         return ok
 
     def _check_squat_depth(self, knee_angle):
+        #TODO geht nix
         """
         Überprüft, ob die Kniebeuge tief genug ist.
         """
         # Update der tiefsten Position
+        logging.info(f"aktuelle Kniebeuge: {knee_angle}, tiefste Position: {self.lowest_knee_angle}")
         self.lowest_knee_angle = min(self.lowest_knee_angle, knee_angle)
 
         # Tief genug, wenn unter dem Schwellenwert
@@ -219,6 +221,7 @@ class SquatAnalyzer(AnalyzerBase):
         return deep_enough
 
     def detect_exercise_phase(self, joint_angles):
+        # TODO: Überarbeiten weil up/down ned geht
         """
         Präzise Phasenerkennung basierend auf Kniewinkeln und Bewegungsrichtung.
         """
@@ -266,7 +269,7 @@ class SquatAnalyzer(AnalyzerBase):
             if not self._check_knees_over_toes(coords, self.current_phase):
                 return 'knees_over_toes'
 
-        if self.previous_phase == 'bottom' and self.current_phase == 'up':
+        if self.previous_phase == 'bottom': # TODO and self.current_phase == 'up'  geht nicht
             if not self._check_squat_depth(self.lowest_knee_angle):
                 return 'squat_depth'
 
