@@ -7,6 +7,7 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -264,3 +265,4 @@ cython_debug/
 raspyfit/processor/src/output_recorded.mp4
 raspyfit/processor/src/utils/__init__.py
 raspyfit/processor/src/output_recorded.mp4
+/sportsfreund/new_processor/feedback.txt

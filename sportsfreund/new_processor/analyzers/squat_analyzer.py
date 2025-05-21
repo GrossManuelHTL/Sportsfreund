@@ -39,6 +39,70 @@ class SquatAnalyzer(AnalyzerBase):
 
         logging.info(f"SquatAnalyzer für {self.config.get_exercise_name()} initialisiert")
 
+        self.last_written_feedback = None
+        self.current_feedback = None
+        self.feedback_file = "feedback.txt"
+
+    def _write_feedback_to_file(self, feedback_key):
+        """
+        Schreibt Feedback in eine Datei, aber nur wenn es sich vom letzten Feedback unterscheidet
+        """
+        if feedback_key == 'good_form' or feedback_key is None:
+            return
+
+        if feedback_key != self.last_written_feedback:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            feedback_text = self.feedback_map[feedback_key][0]
+
+            os.makedirs(os.path.dirname(os.path.abspath(self.feedback_file)), exist_ok=True)
+
+            with open(self.feedback_file, "a", encoding="utf-8") as file:
+                file.write(f"{timestamp}: {feedback_text}\n")
+
+            self.last_written_feedback = feedback_key
+            logging.info(f"Feedback in Datei geschrieben: {feedback_text}")
+
+    def analyze_frame(self, frame, joint_angles, coords, debug=False):
+        """
+        Analysiert einen Frame und generiert Feedback.
+        """
+        if joint_angles is None or coords is None:
+            return frame, self._get_status()
+
+        # Phase erkennen
+        self.previous_phase = self.current_phase
+        self.current_phase = self._determine_phase(joint_angles)
+
+        # Phase-Historie aktualisieren
+        if self.current_phase:
+            if len(self.phase_history) == 0 or self.phase_history[-1] != self.current_phase:
+                self.phase_history.append(self.current_phase)
+                self.state['phase_start_time'] = time.time()
+                self.state['phase_count'][self.current_phase] += 1
+
+                if debug:
+                    print(f"Phase erkannt: {self.current_phase}")
+
+        # Wiederholungen zählen
+        self._count_repetitions(debug)
+
+        # Feedback generieren
+        feedback_key = self._generate_feedback(joint_angles, coords)
+
+        # Feedback-Status verfolgen und in Datei schreiben, wenn sich das Feedback ändert
+        if feedback_key != self.current_feedback:
+            # Feedback hat sich geändert
+            if feedback_key != 'good_form' and feedback_key is not None:
+                # Neues negatives Feedback - in Datei schreiben
+                self._write_feedback_to_file(feedback_key)
+            # Aktuelles Feedback aktualisieren
+            self.current_feedback = feedback_key
+
+        # Frame mit Feedback und Informationen annotieren
+        annotated_frame = self._annotate_frame(frame, feedback_key, joint_angles, debug)
+
+        return annotated_frame, self._get_status()
+
     def _load_config(self):
         """
         Lädt die Konfigurationsdaten aus der config.json.
