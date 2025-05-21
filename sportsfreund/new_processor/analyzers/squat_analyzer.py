@@ -6,12 +6,16 @@ import json
 from .analyzer_base import AnalyzerBase
 
 class SquatAnalyzer(AnalyzerBase):
+
+
     """
     Überarbeitete Klasse zur Analyse von Kniebeugen mit präziserer Phasenerkennung
     und zuverlässiger Fehlererkennung für Knieposition und Tiefe.
     """
     def __init__(self, config):
         super().__init__(config)
+
+        self.lookLeft = False
 
         # Lade die detaillierten Konfigurationsdaten
         self.config_data = self._load_config()
@@ -171,9 +175,10 @@ class SquatAnalyzer(AnalyzerBase):
             ratio = dx / dy
 
         # tolerance
-        return ratio < 1.3
+        #logging.info(ratio)
+        return ratio < 4.5
 
-    def _check_knees_over_toes(self, coords):
+    def _check_knees_over_toes(self, coords, phase):
         """
         Überprüft, ob die Knie über die Zehenspitzen ragen.
         """
@@ -186,11 +191,21 @@ class SquatAnalyzer(AnalyzerBase):
         right_knee_x = coords['right_knee'][0]
         right_foot_x = coords['right_foot_index'][0]
 
-        # Knie sollten nicht viel weiter vorne als die Zehen sein
-        left_ok = left_knee_x <= left_foot_x + 40
-        right_ok = right_knee_x <= right_foot_x + 40
 
-        return left_ok and right_ok
+        #logging.info(f"left_knee_x: {left_knee_x}, left_foot_x: {left_foot_x}, right_knee_x: {right_knee_x}, right_foot_x: {right_foot_x}")
+        # Knie sollten nicht viel weiter vorne als die Zehen sein
+
+        #logging.info(self.lookLeft)
+
+        if phase == 'standing':
+            self.lookLeft = left_foot_x < left_knee_x
+
+        if self.lookLeft:
+            ok = left_knee_x >= left_foot_x
+        else:
+            ok = right_knee_x < right_foot_x
+
+        return ok
 
     def _check_squat_depth(self, knee_angle):
         """
@@ -247,8 +262,8 @@ class SquatAnalyzer(AnalyzerBase):
         if not self._check_side_position(coords):
             return 'side_position'
 
-        if self.current_phase in ['down', 'bottom']:
-            if not self._check_knees_over_toes(coords):
+        if self.current_phase in ['down', 'bottom', 'standing', 'up']:
+            if not self._check_knees_over_toes(coords, self.current_phase):
                 return 'knees_over_toes'
 
         if self.previous_phase == 'bottom' and self.current_phase == 'up':
