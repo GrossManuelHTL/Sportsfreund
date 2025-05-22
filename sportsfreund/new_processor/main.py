@@ -395,7 +395,6 @@ def main():
                         print(f"Übung '{exercise_name}' nicht gefunden!")
                         return
 
-                # Anzahl der Wiederholungen festlegen
                 try:
                     reps_input = input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ")
                     reps_goal = int(reps_input) if reps_input.strip() else trainer.reps_goal
@@ -403,7 +402,6 @@ def main():
                     print("Ungültige Eingabe für Wiederholungen. Standardwert wird verwendet.")
                     reps_goal = trainer.reps_goal
 
-                # Übung erklären und starten
                 if trainer.explain_exercise(exercise_name):
                     input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
                     trainer.start_countdown()
