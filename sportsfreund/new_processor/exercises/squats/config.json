@@ -47,7 +47,7 @@
             "priority": 2,
             "phases": ["down", "bottom", "standing"],
             "conditions": {
-                "knee_toe_horizontal_distance": [-40, 40]
+                "knee_toe_horizontal_distance": [-30, 30]
             }
         },
         "back_straight": {

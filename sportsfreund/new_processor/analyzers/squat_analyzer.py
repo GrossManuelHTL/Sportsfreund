@@ -395,9 +395,11 @@ class SquatAnalyzer(AnalyzerBase):
 
                     if dy < 10 and dx < 50: #dx < 50 weil wenn man gerade vor kamera steht ist dy < 10 und ratio deshalb 0
                         ratio = 0
-                    else:
+                    elif dx < 50:
                         dy = max(dy, 1)  # Vermeide Division durch Null
                         ratio = dx / dy
+                    else:
+                        ratio = 100
 
                     #logging.info(f"dx: {dx}, dy: {dy}, ratio: {ratio}")
 
