@@ -65,7 +65,7 @@
             "priority": 3,
             "phases": ["up", "down", "bottom"],
             "conditions": {
-                "lowest_knee_angle": [0, 90]
+                "lowest_knee_angle": [60, 90]
             }
         }
     },
