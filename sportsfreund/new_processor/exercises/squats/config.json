@@ -63,7 +63,7 @@
             "description": "TIEFER GEHEN",
             "color": "yellow",
             "priority": 3,
-            "phases": ["up"],
+            "phases": ["up", "down", "bottom"],
             "conditions": {
                 "lowest_knee_angle": [0, 90]
             }
