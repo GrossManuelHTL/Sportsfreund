@@ -3,37 +3,33 @@ import time
 import numpy as np
 import os
 import json
+import cv2
 from .analyzer_base import AnalyzerBase
 
 class SquatAnalyzer(AnalyzerBase):
-
-
     """
     Überarbeitete Klasse zur Analyse von Kniebeugen mit präziserer Phasenerkennung
-    und zuverlässiger Fehlererkennung für Knieposition und Tiefe.
+    und zuverlässiger Fehlererkennung basierend auf config.json.
     """
     def __init__(self, config):
         super().__init__(config)
 
-        self.lookLeft = False
-
-        # Lade die detaillierten Konfigurationsdaten
+        # Lade die detaillierten Konfigurationsdaten aus der config.json im squats-Ordner
+        self.rep_history = []
         self.config_data = self._load_config()
 
-        # Feedback-Map auf die wesentlichen Punkte reduzieren
-        self.feedback_map = {
-            'side_position': ('BITTE SEITLICH ZUR KAMERA STEHEN', 190, self.colors['red']),
-            'knees_over_toes': ('KNIE NICHT ÜBER DIE ZEHENSPITZEN', 170, self.colors['red']),
-            'squat_depth': ('TIEFER GEHEN', 180, self.colors['yellow']),
-            'good_form': ('GUTE AUSFÜHRUNG', 120, self.colors['green'])
-        }
+        # Hilfsvariable für Ausrichtung
+        self.lookLeft = False
+
+        # Generiere Feedback-Map aus config_data
+        self.feedback_map = self._generate_feedback_map()
 
         # Historien für die Glättung der Messungen
-        self.angle_history = {
-            'left_knee_angle': [],
-            'right_knee_angle': []
-        }
-        self.history_size = 5
+        self.angle_history = {}
+        for angle in self.config_data.get('angles', []):
+            self.angle_history[angle] = []
+
+        self.history_size = self.config_data.get('visualization', {}).get('history_size', 5)
 
         # Tiefste Knieposition für Feedback speichern
         self.lowest_knee_angle = 180
@@ -41,11 +37,42 @@ class SquatAnalyzer(AnalyzerBase):
         # Hilfsvariablen für Bewegungsrichtung
         self.last_knee_angles = []
 
+        # Fehlererkennungs-Counter für stabileres Feedback
+        self.error_counts = {key: 0 for key in self.feedback_map.keys()}
+        self.error_threshold = self.config_data.get('visualization', {}).get('error_persistence_threshold', 3)
+
         logging.info(f"SquatAnalyzer für {self.config.get_exercise_name()} initialisiert")
 
         self.last_written_feedback = None
         self.current_feedback = None
         self.feedback_file = "feedback.txt"
+
+    def _generate_feedback_map(self):
+        """
+        Erstellt die Feedback-Map basierend auf den Daten aus der config.json
+        """
+        feedback_map = {}
+        feedback_rules = self.config_data.get('feedback_rules', {})
+        colors = self.config_data.get('visualization', {}).get('colors', {})
+
+        for key, rule in feedback_rules.items():
+            description = rule.get('description', '')
+            color_name = rule.get('color', 'red')
+            priority = rule.get('priority', 100)
+
+            # Konvertiere Farbnamen in RGB-Werte aus der config oder verwende Standardwerte
+            if color_name in colors:
+                color = tuple(colors[color_name])
+            else:
+                color = (0, 0, 255)  # Standardfarbe Rot
+
+            feedback_map[key] = (description, priority, color)
+
+        # Füge "good_form" hinzu, falls nicht in der Konfiguration enthalten
+        if 'good_form' not in feedback_map:
+            feedback_map['good_form'] = ('GUTE AUSFÜHRUNG', 120, tuple(colors.get('green', (0, 255, 0))))
+
+        return feedback_map
 
     def _write_feedback_to_file(self, feedback_key):
         """
@@ -81,6 +108,9 @@ class SquatAnalyzer(AnalyzerBase):
         if self.current_phase:
             if len(self.phase_history) == 0 or self.phase_history[-1] != self.current_phase:
                 self.phase_history.append(self.current_phase)
+                if self.current_phase in ['standing', 'bottom']:
+                    self.rep_history.append(self.current_phase)
+
                 self.state['phase_start_time'] = time.time()
                 self.state['phase_count'][self.current_phase] += 1
 
@@ -109,16 +139,18 @@ class SquatAnalyzer(AnalyzerBase):
 
     def _load_config(self):
         """
-        Lädt die Konfigurationsdaten aus der config.json.
+        Lädt die Konfigurationsdaten aus der config.json im exercises-Ordner.
         """
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(base_dir, 'squats', 'config.json')
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(base_dir, 'exercises', 'squats', 'config.json')
 
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config_data = json.load(f)
+                logging.info(f"Konfiguration geladen aus: {config_path}")
+                return config_data
         except Exception as e:
-            logging.error(f"Fehler beim Laden der Konfiguration: {e}")
+            logging.error(f"Fehler beim Laden der Konfiguration von {config_path}: {e}")
             return {}
 
     def _smooth_angles(self, joint_angles):
@@ -220,58 +252,235 @@ class SquatAnalyzer(AnalyzerBase):
         deep_enough = knee_angle <= 95
         return deep_enough
 
-    def detect_exercise_phase(self, joint_angles):
-        # TODO: Überarbeiten weil up/down ned geht
+    def _determine_phase(self, joint_angles):
         """
-        Präzise Phasenerkennung basierend auf Kniewinkeln und Bewegungsrichtung.
+        Bestimmt die aktuelle Übungsphase basierend auf den Gelenkwinkeln und den Phasenkriterien aus der Konfiguration.
         """
-        if 'left_knee_angle' not in joint_angles or 'right_knee_angle' not in joint_angles:
+        if not joint_angles:
             return 'unknown'
 
-        knee_angle = (joint_angles['left_knee_angle'] + joint_angles['right_knee_angle']) / 2
+        # Gelenkwinkel glätten
+        smoothed_angles = self._smooth_angles(joint_angles)
 
-        direction = self._calculate_movement_direction(knee_angle)
+        # Die Bewegungsrichtung basierend auf dem durchschnittlichen Kniewinkel berechnen
+        if 'left_knee_angle' in smoothed_angles and 'right_knee_angle' in smoothed_angles:
+            avg_knee_angle = (smoothed_angles['left_knee_angle'] + smoothed_angles['right_knee_angle']) / 2
+            direction = self._calculate_movement_direction(avg_knee_angle)
+        else:
+            return 'unknown'
 
-        # Phase basierend auf Winkeln und Richtung
-        if knee_angle >= 165:  # Standing/Up phase
-            if self.previous_phase == 'up' or self.previous_phase == 'unknown':
-                # Reset tiefste Position bei vollständig aufrechter Position
+        # Phasenkriterien aus der Konfiguration holen
+        phase_criteria = self.config_data.get('phase_criteria', {})
+
+        # Prüfen, welche Phase am besten zu den aktuellen Winkeln passt
+        matching_phases = []
+
+        for phase, criteria in phase_criteria.items():
+            matches_criteria = True
+
+            # Prüfe alle Winkelkriterien
+            for angle_name, angle_range in criteria.items():
+                if angle_name == 'direction':
+                    # Spezialfall für Richtungskriterium
+                    if criteria['direction'] != direction and direction != 'stable':
+                        matches_criteria = False
+                        break
+                elif angle_name in smoothed_angles:
+                    angle_value = smoothed_angles[angle_name]
+                    min_val, max_val = angle_range
+
+                    if not (min_val <= angle_value <= max_val):
+                        matches_criteria = False
+                        break
+
+            if matches_criteria:
+                matching_phases.append(phase)
+
+        # Wenn mehrere Phasen passen, verwende Kontext oder vorherige Phase zur Entscheidung
+        if len(matching_phases) > 1:
+            # Wenn 'standing' und 'up' beide passen und die vorherige Phase 'up' war,
+            # wähle 'standing' (vollständige Aufwärtsbewegung)
+            if 'standing' in matching_phases and 'up' in matching_phases:
+                if self.previous_phase == 'up':
+                    # Wenn die Aufwärtsbewegung abgeschlossen ist, setze die tiefste Position zurück
+                    self.lowest_knee_angle = 180
+                    return 'standing'
+                else:
+                    return 'up'
+
+            # Wenn 'down' und 'up' beide passen, verwende die Richtung
+            if 'down' in matching_phases and 'up' in matching_phases:
+                if direction == 'down':
+                    return 'down'
+                elif direction == 'up':
+                    return 'up'
+                else:
+                    # Bei unklarer Richtung, behalte vorherige Phase bei oder wähle 'down' als sicheren Standardwert
+                    return self.previous_phase if self.previous_phase in ['down', 'up'] else 'down'
+
+            # Fallback: erste passende Phase
+            return matching_phases[0]
+
+        elif len(matching_phases) == 1:
+            phase = matching_phases[0]
+
+            # Bei 'standing'-Phase tiefste Position zurücksetzen
+            if phase == 'standing' and self.previous_phase == 'up':
                 self.lowest_knee_angle = 180
 
-            return 'standing'
-        elif knee_angle <= 110:  # Bottom phase
-            return 'bottom'
-        elif direction == 'down':
-            return 'down'
-        elif direction == 'up':
-            return 'up'
-        else:
-            if self.previous_phase == 'down' or self.previous_phase == 'unknown':
-                return 'down'
-            else:
-                return 'up'
+            return phase
+
+        # Wenn keine Phase passt, behalte vorherige Phase bei oder verwende 'unknown'
+        return self.previous_phase if self.previous_phase != 'unknown' else 'unknown'
 
     def _generate_feedback(self, joint_angles, coords):
         """
-        Generiert Feedback basierend auf der Übungsausführung.
+        Generiert Feedback basierend auf den Regeln aus der Konfiguration.
         """
         if not joint_angles or not coords:
             return None
 
+        # Gelenkwinkel glätten
         smoothed_angles = self._smooth_angles(joint_angles)
 
-        knee_angle = (smoothed_angles['left_knee_angle'] + smoothed_angles['right_knee_angle']) / 2
+        # Feedback-Regeln aus der Konfiguration holen
+        feedback_rules = self.config_data.get('feedback_rules', {})
 
-        if not self._check_side_position(coords):
-            return 'side_position'
+        # Alle Regeln nach Priorität prüfen (niedrigere Zahl = höhere Priorität)
+        sorted_rules = sorted(feedback_rules.items(),
+                            key=lambda item: item[1].get('priority', 100))
 
-        if self.current_phase in ['down', 'bottom', 'standing', 'up']:
-            if not self._check_knees_over_toes(coords, self.current_phase):
-                return 'knees_over_toes'
+        # Aktuelle Phasen für die Regelauswertung
+        current_phase = self.current_phase or 'unknown'
 
-        if self.previous_phase == 'bottom': # TODO and self.current_phase == 'up'  geht nicht
-            if not self._check_squat_depth(self.lowest_knee_angle):
-                return 'squat_depth'
+        # Bewegungsmetriken berechnen
+        knee_angle = None
+        if 'left_knee_angle' in smoothed_angles and 'right_knee_angle' in smoothed_angles:
+            knee_angle = (smoothed_angles['left_knee_angle'] + smoothed_angles['right_knee_angle']) / 2
 
-        # Keine Probleme gefunden
-        return 'good_form'
+        # Für stabile Erkennung von Feedback-Punkten
+        active_feedback = None
+        error_detected = False
+
+        for rule_key, rule in sorted_rules:
+            # Prüfen, ob die Regel für die aktuelle Phase gilt
+            applicable_phases = rule.get('phases', [])
+            if applicable_phases and current_phase not in applicable_phases:
+                continue
+
+            # Bedingungen der Regel prüfen
+            conditions = rule.get('conditions', {})
+            condition_met = True
+
+            for condition_key, range_values in conditions.items():
+                min_val, max_val = range_values
+
+                # Spezifische Bedingungen überprüfen
+                if condition_key == 'shoulder_alignment_ratio':
+                    # Prüfe Schulterausrichtung (seitliche Position)
+                    if 'left_shoulder' not in coords or 'right_shoulder' not in coords:
+                        continue
+
+                    dx = abs(coords['left_shoulder'][0] - coords['right_shoulder'][0])
+                    dy = abs(coords['left_shoulder'][1] - coords['right_shoulder'][1])
+
+                    if dy < 10:
+                        ratio = 0
+                    else:
+                        ratio = dx / dy
+
+                    if not (min_val <= ratio <= max_val):
+                        condition_met = False
+
+                elif condition_key == 'knee_toe_horizontal_distance':
+                    # Prüfe Knie-über-Zehen-Position
+                    if not all(k in coords for k in ['left_knee', 'left_foot_index', 'right_knee', 'right_foot_index']):
+                        continue
+
+                    left_knee_x = coords['left_knee'][0]
+                    left_foot_x = coords['left_foot_index'][0]
+                    right_knee_x = coords['right_knee'][0]
+                    right_foot_x = coords['right_foot_index'][0]
+
+                    # Knieposition im Verhältnis zu den Zehen prüfen
+                    if current_phase == 'standing':
+                        self.lookLeft = left_foot_x < left_knee_x
+
+                    if self.lookLeft:
+                        distance = left_knee_x - left_foot_x
+                    else:
+                        distance = right_foot_x - right_knee_x
+
+                    if not (min_val <= distance <= max_val):
+                        condition_met = False
+
+                elif condition_key == 'hip_angle':
+                    # Prüfe Hüftwinkel (gerader Rücken)
+                    hip_angle = None
+                    if 'left_hip_angle' in smoothed_angles and 'right_hip_angle' in smoothed_angles:
+                        hip_angle = (smoothed_angles['left_hip_angle'] + smoothed_angles['right_hip_angle']) / 2
+
+                    if hip_angle is None:
+                        continue
+
+                    if not (min_val <= hip_angle <= max_val):
+                        condition_met = False
+
+                elif condition_key == 'lowest_knee_angle':
+                    # Prüfe, ob Kniebeuge tief genug war
+                    if self.lowest_knee_angle is None:
+                        continue
+
+                    if not (min_val <= self.lowest_knee_angle <= max_val):
+                        condition_met = False
+
+            # Wenn alle Bedingungen erfüllt sind, Fehler gefunden
+            if condition_met:
+                # Zähle diesen Fehler
+                self.error_counts[rule_key] = self.error_counts.get(rule_key, 0) + 1
+
+                # Zurücksetzen anderer Fehlerzähler
+                for other_key in self.error_counts:
+                    if other_key != rule_key:
+                        self.error_counts[other_key] = 0
+
+                # Prüfe, ob der Fehler lange genug besteht
+                if self.error_counts[rule_key] >= self.error_threshold:
+                    active_feedback = rule_key
+                    error_detected = True
+                    break
+            else:
+                # Fehler tritt nicht auf, reduziere den Zähler
+                self.error_counts[rule_key] = max(0, self.error_counts.get(rule_key, 0) - 1)
+
+        # Wenn kein Fehler erkannt wurde, gutes Feedback
+        if not error_detected:
+            return 'good_form'
+
+        return active_feedback
+
+    def _count_repetitions(self, debug=False):
+        """
+        Zählt Wiederholungen basierend auf der Phasenhistorie.
+        Eine Wiederholung wird nur gezählt, wenn eine vollständige 'standing -> bottom -> standing' Sequenz erkannt wird.
+        """
+        if len(self.rep_history) >= 3:
+            # Suche nach der Sequenz: standing -> bottom -> standing
+            last_three = self.rep_history[-3:]
+
+            if last_three == ['standing', 'bottom', 'standing']:
+                self.rep_count += 1
+
+                # Behalte nur die letzte Phase (standing) für die nächste Wiederholung
+                self.rep_history = [self.rep_history[-1]]
+
+                self.state['last_rep_time'] = time.time()
+
+                if debug:
+                    logging.info(f"Wiederholung erkannt! Anzahl: {self.rep_count}")
+
+            # Alternativ: Falls die Historie zu lang wird, kürzen
+            elif len(self.rep_history) > 10:
+                # Behalte nur die letzten 5 Phasen
+                self.rep_history = self.rep_history[-5:]
+
