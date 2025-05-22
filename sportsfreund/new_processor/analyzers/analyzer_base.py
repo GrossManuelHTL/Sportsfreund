@@ -89,6 +89,7 @@ class AnalyzerBase(ABC):
 
         # Generiere Feedback basierend auf der Ausführung
         feedback_id = self._generate_feedback(joint_angles, coords)
+        #logging.info(feedback_id)
 
         # Annotiere Frame mit Informationen
         annotated_frame = self._annotate_frame(frame, feedback_id, joint_angles, debug)
@@ -200,13 +201,13 @@ class AnalyzerBase(ABC):
         """
         pass
 
-    def _annotate_frame(self, frame, feedback_id, joint_angles, debug=True):
+    def _annotate_frame(self, frame, feedback_ids, joint_angles, debug=True):
         """
         Annotiert den Frame mit Informationen zur Übung.
 
         Args:
             frame: Der aktuelle Videoframe
-            feedback_id: Die ID des aktuellen Feedbacks
+            feedback_ids: Die ID der aktuellen Feedbacks
             joint_angles: Dictionary der Gelenkwinkel
             debug: Debug-Infos anzeigen
 
@@ -245,42 +246,43 @@ class AnalyzerBase(ABC):
             )
 
         # Feedback anzeigen
-        if feedback_id and feedback_id in self.feedback_map:
-            text, y_pos, color = self.feedback_map[feedback_id]
+        for feedback_id in feedback_ids:
+            if feedback_id and feedback_id in self.feedback_map:
+                text, y_pos, color = self.feedback_map[feedback_id]
 
-            # Aktuelle Zeit
-            current_time = time.time()
+                # Aktuelle Zeit
+                current_time = time.time()
 
-            # Neue Feedback-Nachricht hinzufügen
-            if feedback_id not in self.state['feedback_times'] or \
-               current_time - self.state['feedback_times'].get(feedback_id, 0) > self.state['feedback_duration']:
-                self.state['feedback_times'][feedback_id] = current_time
+                # Neue Feedback-Nachricht hinzufügen
+                if feedback_id not in self.state['feedback_times'] or \
+                   current_time - self.state['feedback_times'].get(feedback_id, 0) > self.state['feedback_duration']:
+                    self.state['feedback_times'][feedback_id] = current_time
 
-                # Feedback zur Historie hinzufügen, wenn es sich geändert hat
-                if len(self.feedback_history) == 0 or self.feedback_history[-1] != feedback_id:
-                    self.feedback_history.append(feedback_id)
+                    # Feedback zur Historie hinzufügen, wenn es sich geändert hat
+                    if len(self.feedback_history) == 0 or self.feedback_history[-1] != feedback_id:
+                        self.feedback_history.append(feedback_id)
 
-            # Alle aktiven Feedback-Nachrichten anzeigen
-            active_feedbacks = []
-            for fb_id, timestamp in self.state['feedback_times'].items():
-                if current_time - timestamp <= self.state['feedback_duration']:
-                    active_feedbacks.append(fb_id)
+                # Alle aktiven Feedback-Nachrichten anzeigen
+                active_feedbacks = []
+                for fb_id, timestamp in self.state['feedback_times'].items():
+                    if current_time - timestamp <= self.state['feedback_duration']:
+                        active_feedbacks.append(fb_id)
 
-            # Anzeigen der aktiven Feedbacks
-            for i, fb_id in enumerate(active_feedbacks):
-                fb_text, fb_y_pos, fb_color = self.feedback_map[fb_id]
-                y_position = fb_y_pos + i * 40  # Versetzt die Textzeilen
+                # Anzeigen der aktiven Feedbacks
+                for i, fb_id in enumerate(active_feedbacks):
+                    fb_text, fb_y_pos, fb_color = self.feedback_map[fb_id]
+                    y_position = fb_y_pos + i * 40  # Versetzt die Textzeilen
 
-                cv2.putText(
-                    annotated,
-                    fb_text,
-                    (10, y_position),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    fb_color,
-                    2,
-                    cv2.LINE_AA
-                )
+                    cv2.putText(
+                        annotated,
+                        fb_text,
+                        (10, y_position),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        fb_color,
+                        2,
+                        cv2.LINE_AA
+                    )
 
         # Debug-Informationen anzeigen
         if debug and joint_angles:

@@ -38,14 +38,14 @@
             "color": "red",
             "priority": 1,
             "conditions": {
-                "shoulder_alignment_ratio": [0, 1.5]
+                "shoulder_alignment_ratio": [0, 5]
             }
         },
         "knees_over_toes": {
             "description": "KNIE NICHT ÜBER DIE ZEHENSPITZEN",
             "color": "red",
             "priority": 2,
-            "phases": ["down", "bottom"],
+            "phases": ["down", "bottom", "standing"],
             "conditions": {
                 "knee_toe_horizontal_distance": [-40, 40]
             }
@@ -65,7 +65,7 @@
             "priority": 3,
             "phases": ["up"],
             "conditions": {
-                "lowest_knee_angle": [0, 95]
+                "lowest_knee_angle": [0, 90]
             }
         }
     },

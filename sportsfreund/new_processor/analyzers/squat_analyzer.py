@@ -5,6 +5,7 @@ import os
 import json
 import cv2
 from .analyzer_base import AnalyzerBase
+from poseextraction.pose_extractor import PoseExtractor
 
 class SquatAnalyzer(AnalyzerBase):
     """
@@ -33,6 +34,7 @@ class SquatAnalyzer(AnalyzerBase):
 
         # Tiefste Knieposition für Feedback speichern
         self.lowest_knee_angle = 180
+        self.pose_extractor = PoseExtractor()
 
         # Hilfsvariablen für Bewegungsrichtung
         self.last_knee_angles = []
@@ -122,15 +124,16 @@ class SquatAnalyzer(AnalyzerBase):
 
         # Feedback generieren
         feedback_key = self._generate_feedback(joint_angles, coords)
+        #logging.info(feedback_key)
 
-        # Feedback-Status verfolgen und in Datei schreiben, wenn sich das Feedback ändert
-        if feedback_key != self.current_feedback:
-            # Feedback hat sich geändert
-            if feedback_key != 'good_form' and feedback_key is not None:
-                # Neues negatives Feedback - in Datei schreiben
-                self._write_feedback_to_file(feedback_key)
-            # Aktuelles Feedback aktualisieren
-            self.current_feedback = feedback_key
+        # # Feedback-Status verfolgen und in Datei schreiben, wenn sich das Feedback ändert
+        # if feedback_key != self.current_feedback:
+        #     # Feedback hat sich geändert
+        #     if feedback_key != 'good_form' and feedback_key is not None:
+        #         # Neues negatives Feedback - in Datei schreiben
+        #         self._write_feedback_to_file(feedback_key)
+        #     # Aktuelles Feedback aktualisieren
+        #     self.current_feedback = feedback_key
 
         # Frame mit Feedback und Informationen annotieren
         annotated_frame = self._annotate_frame(frame, feedback_key, joint_angles, debug)
@@ -207,7 +210,7 @@ class SquatAnalyzer(AnalyzerBase):
             ratio = dx / dy
 
         # tolerance
-        #logging.info(ratio)
+        logging.info(ratio)
         return ratio < 5
 
     def _check_knees_over_toes(self, coords, phase):
@@ -359,7 +362,7 @@ class SquatAnalyzer(AnalyzerBase):
             knee_angle = (smoothed_angles['left_knee_angle'] + smoothed_angles['right_knee_angle']) / 2
 
         # Für stabile Erkennung von Feedback-Punkten
-        active_feedback = None
+        active_feedback = []
         error_detected = False
 
         for rule_key, rule in sorted_rules:
@@ -371,6 +374,12 @@ class SquatAnalyzer(AnalyzerBase):
             # Bedingungen der Regel prüfen
             conditions = rule.get('conditions', {})
             condition_met = True
+
+            if self.lookLeft:
+                self.lowest_knee_angle = min(smoothed_angles['left_knee_angle'], self.lowest_knee_angle)
+            else:
+                self.lowest_knee_angle = min(smoothed_angles['right_knee_angle'], self.lowest_knee_angle)
+
 
             for condition_key, range_values in conditions.items():
                 min_val, max_val = range_values
@@ -384,13 +393,21 @@ class SquatAnalyzer(AnalyzerBase):
                     dx = abs(coords['left_shoulder'][0] - coords['right_shoulder'][0])
                     dy = abs(coords['left_shoulder'][1] - coords['right_shoulder'][1])
 
-                    if dy < 10:
+                    if dy < 10 and dx < 50: #dx < 50 weil wenn man gerade vor kamera steht ist dy < 10 und ratio deshalb 0
                         ratio = 0
                     else:
+                        dy = max(dy, 1)  # Vermeide Division durch Null
                         ratio = dx / dy
 
+                    #logging.info(f"dx: {dx}, dy: {dy}, ratio: {ratio}")
+
+
+                    #logging.info(ratio)
                     if not (min_val <= ratio <= max_val):
-                        condition_met = False
+                        if not rule_key in active_feedback:
+                            active_feedback.append(rule_key)
+                        error_detected = True
+                        #logging.info("a")
 
                 elif condition_key == 'knee_toe_horizontal_distance':
                     # Prüfe Knie-über-Zehen-Position
@@ -402,61 +419,81 @@ class SquatAnalyzer(AnalyzerBase):
                     right_knee_x = coords['right_knee'][0]
                     right_foot_x = coords['right_foot_index'][0]
 
-                    # Knieposition im Verhältnis zu den Zehen prüfen
                     if current_phase == 'standing':
                         self.lookLeft = left_foot_x < left_knee_x
 
-                    if self.lookLeft:
-                        distance = left_knee_x - left_foot_x
-                    else:
-                        distance = right_foot_x - right_knee_x
+                    #logging.info(f"left_knee_x: {left_knee_x}, left_foot_x: {left_foot_x}, right_knee_x: {right_knee_x}, right_foot_x: {right_foot_x}, lookLeft: {self.lookLeft}")
 
-                    if not (min_val <= distance <= max_val):
-                        condition_met = False
+                    ok = True
 
-                elif condition_key == 'hip_angle':
-                    # Prüfe Hüftwinkel (gerader Rücken)
-                    hip_angle = None
-                    if 'left_hip_angle' in smoothed_angles and 'right_hip_angle' in smoothed_angles:
-                        hip_angle = (smoothed_angles['left_hip_angle'] + smoothed_angles['right_hip_angle']) / 2
 
-                    if hip_angle is None:
-                        continue
+                    #logging.info(f"current_phase: {current_phase}, lookLeft: {self.lookLeft}")
+                    if not current_phase == 'standing':
+                        if self.lookLeft:
+                            ok = left_knee_x + max_val >= left_foot_x
+                        else:
+                            ok = right_knee_x + min_val <= right_foot_x
 
-                    if not (min_val <= hip_angle <= max_val):
-                        condition_met = False
+                    if not (ok):
+                        if not rule_key in active_feedback:
+                            active_feedback.append(rule_key)
+                        error_detected = True
+                        #logging.info("b")
+
+                # elif condition_key == 'hip_angle':
+                #     # Prüfe Hüftwinkel (gerader Rücken)
+                #     hip_angle = None
+                #     if 'left_hip_angle' in smoothed_angles and 'right_hip_angle' in smoothed_angles:
+                #         hip_angle = (smoothed_angles['left_hip_angle'] + smoothed_angles['right_hip_angle']) / 2
+                #
+                #     if hip_angle is None:
+                #         continue
+                #
+                #     if not (min_val <= hip_angle <= max_val):
+                #         condition_met = False
+                #         #logging.info("c")
 
                 elif condition_key == 'lowest_knee_angle':
+
                     # Prüfe, ob Kniebeuge tief genug war
                     if self.lowest_knee_angle is None:
                         continue
 
+                    logging.info(self.lowest_knee_angle)
                     if not (min_val <= self.lowest_knee_angle <= max_val):
-                        condition_met = False
+                        if not rule_key in active_feedback:
+                            active_feedback.append(rule_key)
+                        error_detected = True
+                        #logging.info("d")
 
             # Wenn alle Bedingungen erfüllt sind, Fehler gefunden
-            if condition_met:
-                # Zähle diesen Fehler
-                self.error_counts[rule_key] = self.error_counts.get(rule_key, 0) + 1
-
-                # Zurücksetzen anderer Fehlerzähler
-                for other_key in self.error_counts:
-                    if other_key != rule_key:
-                        self.error_counts[other_key] = 0
-
-                # Prüfe, ob der Fehler lange genug besteht
-                if self.error_counts[rule_key] >= self.error_threshold:
-                    active_feedback = rule_key
-                    error_detected = True
-                    break
-            else:
-                # Fehler tritt nicht auf, reduziere den Zähler
-                self.error_counts[rule_key] = max(0, self.error_counts.get(rule_key, 0) - 1)
+            # if not condition_met:
+            #     #logging.info(condition_met)
+            #     # Zähle diesen Fehler
+            #     self.error_counts[rule_key] = self.error_counts.get(rule_key, 0) + 1
+            #
+            #     # Zurücksetzen anderer Fehlerzähler
+            #     for other_key in self.error_counts:
+            #         if other_key != rule_key:
+            #             self.error_counts[other_key] = 0
+            #
+            #     # Prüfe, ob der Fehler lange genug besteht
+            #     if self.error_counts[rule_key] >= self.error_threshold:
+            #         if not rule_key in active_feedback:
+            #             active_feedback.append(rule_key)
+            #         error_detected = True
+            #         break
+            # else:
+            #     # Fehler tritt nicht auf, reduziere den Zähler
+            #     self.error_counts[rule_key] = max(0, self.error_counts.get(rule_key, 0) - 1)
 
         # Wenn kein Fehler erkannt wurde, gutes Feedback
         if not error_detected:
-            return 'good_form'
+            if not 'good_form' in active_feedback:
+                active_feedback.append('good_form')
 
+        #logging.info(error_detected)
+        logging.info(active_feedback)
         return active_feedback
 
     def _count_repetitions(self, debug=False):
