@@ -14,7 +14,7 @@ class InstructionExplainer:
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)
         self.engine.setProperty('volume', 1)
-        self.engine.setProperty('voice', 'english+f3')
+        self.engine.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_DE-DE_HEDDA_11.0')
         self.prep_instruction = None
         self.exec_instruction = None
         self.load_instructions()
