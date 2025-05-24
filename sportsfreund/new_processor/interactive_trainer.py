@@ -66,16 +66,16 @@ class InteractiveTrainer:
         """Startet einen Countdown vor Beginn der Übung"""
         self.state = WorkoutState.COUNTDOWN
         print("\nBereite dich vor...")
-        self.instruction_explainer.say_sentence("Bereite dich vor...", False)
+        self.instruction_explainer.say_sentence("Bereite dich vor...")
 
         # Countdown von 5 Sekunden
         for i in range(self.countdown_seconds, 0, -1):
             print(f"{i}...")
-            self.instruction_explainer.say_sentence(str(i), False)
+            self.instruction_explainer.say_sentence(str(i))
             time.sleep(1)
 
         print("LOS!")
-        self.instruction_explainer.say_sentence("Los geht's!", True)
+        self.instruction_explainer.say_sentence("Los geht's!")
         self.state = WorkoutState.EXERCISING
 
     def _generate_exercise_cues(self, exercise_name, phase):
@@ -184,7 +184,7 @@ class InteractiveTrainer:
             if self.exercise_manager.analyzer.rep_count > self.current_rep:
                 self.current_rep = self.exercise_manager.analyzer.rep_count
                 print(f"Wiederholung {self.current_rep} abgeschlossen!")
-                self.instruction_explainer.say_sentence(f"Wiederholung {self.current_rep}", False)
+                self.instruction_explainer.say_sentence(f"Wiederholung {self.current_rep}")
 
                 # Bei jeder 4. Wiederholung Feedback geben
                 if self.current_rep % self.reps_per_feedback == 0 and self.current_rep > self.last_feedback_rep:
@@ -194,7 +194,7 @@ class InteractiveTrainer:
                 # Ziel erreicht?
                 if self.current_rep >= self.reps_goal:
                     print("\nZiel erreicht! Super gemacht!")
-                    self.instruction_explainer.say_sentence("Ziel erreicht! Super gemacht!", True)
+                    self.instruction_explainer.say_sentence("Ziel erreicht! Super gemacht!")
                     time.sleep(3)  # Zeit zum Feiern
                     break
 
@@ -233,14 +233,14 @@ class InteractiveTrainer:
             if count / total_feedbacks > 0.4 and feedback_id != 'good_form':
                 feedback_text = self.exercise_manager.analyzer.feedback_map[feedback_id][0]
                 print(f"\nFeedback: {feedback_text}")
-                self.instruction_explainer.say_sentence(feedback_text, False)
+                self.instruction_explainer.say_sentence(feedback_text)
                 return
 
         # Wenn die Ausführung gut ist
         if 'good_form' in feedback_counter:
             good_feedback = "Gut gemacht! Weiter so!"
             print(f"\nFeedback: {good_feedback}")
-            self.instruction_explainer.say_sentence(good_feedback, False)
+            self.instruction_explainer.say_sentence(good_feedback)
 
 def main():
     """
