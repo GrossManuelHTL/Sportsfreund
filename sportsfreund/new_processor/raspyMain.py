@@ -3,14 +3,17 @@ import signal
 import json
 import requests
 import time
+import RPi.GPIO as GPIO
+import subprocess
+
 
 API_BASE = "http://localhost:3000/sportsfreund"  # anpassen falls nötig
+BUTTON_PIN = 17  # Oder der GPIO-Pin, den dein Taster tatsächlich nutzt
+
 
 continue_reading = True
 session_id = None
 current_exercise_id = None
-session_exercise_id = None
-
 
 def raspymain():
     global session_id
@@ -39,13 +42,15 @@ def raspymain():
                 if current_uid != last_uid:
                     last_uid = current_uid
                     description = uid_map.get(current_uid, "Unbekannte Karte")
+                    if description == "exit":
+                        shutdown_pressed()
                     print("Beschreibung:", description)
 
                     if exercise != description:
-                        endExercise(exercise)
                         exercise = description
                         startExercise(exercise)
 
+    GPIO.cleanup()
 
 def startSession():
     print("Starte neue Session...")
@@ -53,21 +58,11 @@ def startSession():
         response = requests.post(f"{API_BASE}/session", json={"start": time.strftime("%Y-%m-%dT%H:%M:%S")})
         response.raise_for_status()
         session = response.json()
-        print(f"Session gestartet mit ID: {session['id']}")
-        return session["id"]
+        print(f"Session gestartet mit ID: {session}")
+        return session["sessionID"]
     except requests.RequestException as e:
         print("Fehler beim Starten der Session:", e)
         return None
-
-
-def endSession():
-    print("Beende Session...")
-    try:
-        response = requests.patch(f"{API_BASE}/session/{session_id}/endtime", json={})
-        response.raise_for_status()
-        print("Session beendet.")
-    except requests.RequestException as e:
-        print("Fehler beim Beenden der Session:", e)
 
 
 def startExercise(exercise_name):
@@ -78,34 +73,31 @@ def startExercise(exercise_name):
 
     try:
         response = requests.post(
-            f"{API_BASE}/sessions/exercise",
+            f"http://localhost:3000/sportsfreund/sessions/exercise",
             json={
-                "session": session_id,
-                "exercise": exercise_name,
-                "start": time.strftime("%Y-%m-%dT%H:%M:%S")
+                "sessionID": session_id,
+                "exerciseID": 1,
+                "feedback": "",
+                "repetitions": 0,
+                "score": 0,
+                "exersuce": "squats",
+                "session": session_id
             }
         )
         response.raise_for_status()
         result = response.json()
-        session_exercise_id = result["id"]
+
+        print(result)
+        print("jetzt hamme das gestartet")
+        cmd = ['python3', 'main.py', '--exercise', exercise_name, '--interactive']
+        process = subprocess.Popen(cmd)
+        return process
+
     except requests.RequestException as e:
         print("Fehler beim Starten der Übung:", e)
 
 
-def endExercise(exercise_name):
-    global session_exercise_id
-    if not session_exercise_id:
-        return
-    print(f"Beende Übung: {exercise_name}")
-    try:
-        response = requests.patch(
-            f"{API_BASE}/sessions/exercise/{session_exercise_id}/endtime",  # Diese Route müsstest du ggf. noch erstellen!
-            json={"end": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        )
-        response.raise_for_status()
-    except requests.RequestException as e:
-        print("Fehler beim Beenden der Übung:", e)
-    session_exercise_id = None
+
 
 
 def uidToString(uid):
@@ -116,8 +108,25 @@ def end_read(signal, frame):
     global continue_reading
     print("Ctrl+C captured, beende Lesevorgang.")
     continue_reading = False
-    endExercise("aktuelle Übung")
-    endSession()
+
+
+def shutdown_pressed():
+    global continue_reading
+    print("Taster gedrückt: Beende aktuelle Übung, Session und Backend...")
+
+    continue_reading = False  # Hauptschleife beenden
+
+    time.sleep(1)
+
+    try:
+        # Sende Shutdown-Request ans Backend
+        response = requests.post(f"http://localhost:3000/sportsfreund/shutdown")
+        print("Backend wurde informiert:", response.text)
+    except requests.RequestException as e:
+        print("Fehler beim Beenden des Backends:", e)
+
+    print("Beende Frontend...")
+    exit(0)  # Beendet dieses Skript
 
 
 if __name__ == "__main__":

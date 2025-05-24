@@ -1,6 +1,5 @@
 mediapipe
 opencv-python
 pyttsx3
-spidev
 scikit-learn
 numpy

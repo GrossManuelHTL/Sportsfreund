@@ -38,65 +38,25 @@ router.post("/session", async (req, res)=>{
   }
 })
 
-router.patch("/session/:id/endtime", async (_req, _res) => {
-  const { id } = _req.params;
-
-  try {
-    await Database.initialize();
-
-    const sessionRepo = Database.getRepo(Session);
-    const session = await sessionRepo.findOneBy({ id: parseInt(id) });
-
-    if (!session) {
-      _res.status(404).send("Session not found");
-      return;
-    }
-
-    session.end = new Date();
-    if (_req.body.score !== undefined) {
-      session.totalScore = _req.body.score;
-    }
-    await sessionRepo.save(session);
-
-    _res.status(200).json("endtime succesfully updated");
-  } catch (error: any) {
-    _res.status(500).json("Database Error" + error);
-  }
-});
-
-router.patch("/sessions/exercise/:id/endtime", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await Database.initialize();
-
-    const repo = Database.getRepo(SessionExercise);
-    const sessionExercise = await repo.findOneBy({ id: parseInt(id) });
-
-    if (!sessionExercise) {
-      res.status(404).send("SessionExercise not found");
-      return;
-    }
-
-    sessionExercise.end = new Date();
-    await repo.save(sessionExercise);
-
-    res.status(200).json("SessionExercise beendet");
-  } catch (error: any) {
-    res.status(500).json("Datenbankfehler: " + error.message);
-  }
-});
-
 
 router.post("/sessions/exercise", async (req, res) =>{
   try{
     const repo = Database.getRepo(SessionExercise);
     const newSessionExercise = repo.create(req.body)
+    console.log(newSessionExercise)
     const result = await repo.save(newSessionExercise);
     res.json(result);
   }catch (error){
     res.status(500).json("Server error"+ error);
   }
 })
+
+router.post('/shutdown', (req, res) => {
+    console.log("Shutdown-Anfrage empfangen.");
+    res.send("Backend wird beendet...");
+    process.exit(0);
+});
+
+
 
 export default router;
