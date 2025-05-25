@@ -258,7 +258,7 @@ class InteractiveTrainer:
                     self.exercise_manager.analyzer.rep_count -= 1
 
                 logging.info(self.feedback_during_rep)
-                logging.info(self.wrong_reps)
+                #logging.info(self.wrong_reps)
                 self.feedback_during_rep = []
 
             cv2.imshow('Interaktives Training', analyzed_frame)
