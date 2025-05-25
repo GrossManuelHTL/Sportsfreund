@@ -66,22 +66,6 @@ class InteractiveTrainer:
 
         return True
 
-    def start_countdown(self):
-        """Startet einen Countdown vor Beginn der Übung"""
-        self.state = WorkoutState.COUNTDOWN
-        print("\nBereite dich vor...")
-        self.instruction_explainer.say_sentence("Bereite dich vor...")
-
-        # Countdown von 5 Sekunden
-        for i in range(self.countdown_seconds, 0, -1):
-            print(f"{i}...")
-            self.instruction_explainer.say_sentence(str(i))
-            time.sleep(1)
-
-        print("LOS!")
-        self.instruction_explainer.say_sentence("Los geht's!")
-        self.state = WorkoutState.EXERCISING
-
     def _generate_exercise_cues(self, exercise_name, phase):
         """Generiert passende Ansagen für jede Phase der Übung"""
         cues = {
@@ -298,7 +282,6 @@ def main():
 
                 trainer.explain_exercise(args.exercise)
                 input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                trainer.start_countdown()
                 trainer.start_exercise(args.exercise, reps_goal)
             else:
                 print(f"Übung '{args.exercise}' nicht gefunden!")
@@ -338,7 +321,6 @@ def main():
             # Übung erklären
             if trainer.explain_exercise(exercise_name):
                 input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                trainer.start_countdown()
                 trainer.start_exercise(exercise_name, reps_goal)
 
     except KeyboardInterrupt:

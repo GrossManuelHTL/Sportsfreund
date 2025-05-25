@@ -62,9 +62,10 @@ class InstructionExplainer:
         self.engine.music.load("temp.mp3")
         self.engine.music.play()
 
+        clock = pygame.time.Clock()
         while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
-
+            clock.tick(60)
+        time.sleep(0.75)
         pygame.mixer.music.unload()
 
     def say_sentence_no_wait(self, sentence):
