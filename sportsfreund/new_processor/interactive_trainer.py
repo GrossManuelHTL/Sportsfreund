@@ -33,6 +33,10 @@ class InteractiveTrainer:
         self.reps_goal = 10
         self.exercise = exercise
         self.instruction_explainer = None
+        self.no_person_counter = 0
+        self.error_threshold = 100
+        self.error_wait = -200
+        self.last_played = None
 
     def list_exercises(self):
         """Listet alle verfügbaren Übungen aus dem exercises-Ordner auf"""
@@ -114,6 +118,11 @@ class InteractiveTrainer:
             debug=self.debug
         )
 
+        self.feedback_map = self.exercise_manager.feedback_map
+        self.simplified_feedback_map = {
+            key: value[0] for key, value in self.feedback_map.items()
+        }
+        self.feedback_counters = {key: 0 for key in self.feedback_map}
         self.current_exercise = exercise_name
         self.current_rep = 0
         self.last_phase = None
@@ -158,16 +167,28 @@ class InteractiveTrainer:
             if landmarks is None:
                 cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 cv2.putText(frame, "Keine Person erkannt!", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                self.no_person_counter += 1
+                if self.no_person_counter >= self.error_threshold:
+                    self.instruction_explainer.say_sentence_no_wait("Keine Person erkannt! Bitte stellen sie sich seitlich vor die Kamera.")
+                    self.no_person_counter = self.error_wait
+                    self.last_played = "no_person"
                 cv2.imshow('Interaktives Training', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                 continue
+            elif self.last_played == "no_person":
+                self.instruction_explainer.stop_speaking()
+                self.no_person_counter = 0
+            else:
+                self.no_person_counter = 0
 
             coords = self.exercise_manager.pose_extractor.get_landmark_coordinates(landmarks, width, height)
             joint_angles = self.exercise_manager.pose_extractor.calculate_joint_angles(coords)
 
             # Verarbeite Frame mit dem Übungs-Analysator
-            analyzed_frame, status = self.exercise_manager.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
+            analyzed_frame, status, feedback_keys = self.exercise_manager.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
+
+
 
             # Aktuelle Wiederholungszahl und Ziel anzeigen
             cv2.putText(analyzed_frame, f"Wiederholung: {self.exercise_manager.analyzer.rep_count}/{self.reps_goal}",
@@ -175,6 +196,8 @@ class InteractiveTrainer:
 
             # Sprachansagen für Phasenwechsel
             current_phase = self.exercise_manager.analyzer.current_phase
+
+            logging.info(feedback_keys)
             if current_phase != self.last_phase and current_phase is not None:
                 cue = self._generate_exercise_cues(exercise_name, current_phase)
                 print(f"Phase: {current_phase} - {cue}")
@@ -186,10 +209,10 @@ class InteractiveTrainer:
                 print(f"Wiederholung {self.current_rep} abgeschlossen!")
                 self.instruction_explainer.say_sentence(f"Wiederholung {self.current_rep}")
 
-                # Bei jeder 4. Wiederholung Feedback geben
-                if self.current_rep % self.reps_per_feedback == 0 and self.current_rep > self.last_feedback_rep:
-                    self._give_feedback()
-                    self.last_feedback_rep = self.current_rep
+                # # Bei jeder 4. Wiederholung Feedback geben
+                # if self.current_rep % self.reps_per_feedback == 0 and self.current_rep > self.last_feedback_rep:
+                #     self._give_feedback()
+                #     self.last_feedback_rep = self.current_rep
 
                 # Ziel erreicht?
                 if self.current_rep >= self.reps_goal:

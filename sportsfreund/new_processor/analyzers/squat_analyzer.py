@@ -74,6 +74,7 @@ class SquatAnalyzer(AnalyzerBase):
         if 'good_form' not in feedback_map:
             feedback_map['good_form'] = ('GUTE AUSFÜHRUNG', 120, tuple(colors.get('green', (0, 255, 0))))
 
+        logging.info(feedback_map)
         return feedback_map
 
     def _write_feedback_to_file(self, feedback_key):
@@ -138,7 +139,7 @@ class SquatAnalyzer(AnalyzerBase):
         # Frame mit Feedback und Informationen annotieren
         annotated_frame = self._annotate_frame(frame, feedback_key, joint_angles, debug)
 
-        return annotated_frame, self._get_status()
+        return annotated_frame, self._get_status(), feedback_key
 
     def _load_config(self):
         """
@@ -461,7 +462,7 @@ class SquatAnalyzer(AnalyzerBase):
                     if self.lowest_knee_angle is None:
                         continue
 
-                    logging.info(self.lowest_knee_angle)
+                    #logging.info(self.lowest_knee_angle)
                     if not (min_val <= self.lowest_knee_angle <= max_val):
                         if not rule_key in active_feedback:
                             active_feedback.append(rule_key)

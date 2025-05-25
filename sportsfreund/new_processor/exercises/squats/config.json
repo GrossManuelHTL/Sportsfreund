@@ -35,6 +35,7 @@
     "feedback_rules": {
         "side_position": {
             "description": "BITTE SEITLICH ZUR KAMERA STEHEN",
+            "description_long": "Bitte stelle dich seitlich zur Kamera..",
             "color": "red",
             "priority": 1,
             "conditions": {
@@ -43,6 +44,7 @@
         },
         "knees_over_toes": {
             "description": "KNIE NICHT ÜBER DIE ZEHENSPITZEN",
+            "description_long": "Bitte achte darauf, dass deine Knie nicht über die Zehenspitzen hinausragen.",
             "color": "red",
             "priority": 2,
             "phases": ["down", "bottom", "standing"],
@@ -52,6 +54,7 @@
         },
         "back_straight": {
             "description": "RÜCKEN GERADE HALTEN",
+            "description_long": "Bitte halte deinen Rücken gerade während der Übung.",
             "color": "red",
             "priority": 2,
             "phases": ["down", "bottom", "up"],
@@ -61,6 +64,7 @@
         },
         "squat_depth": {
             "description": "TIEFER GEHEN",
+            "description_long": "Bitte gehe tiefer in die Hocke.",
             "color": "yellow",
             "priority": 3,
             "phases": ["up", "down", "bottom"],

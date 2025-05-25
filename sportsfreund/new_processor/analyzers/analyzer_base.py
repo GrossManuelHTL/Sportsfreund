@@ -343,3 +343,6 @@ class AnalyzerBase(ABC):
         }
 
         logging.info("Analyzer zurückgesetzt")
+
+    def get_feedback_map(self):
+        return self.feedback_map

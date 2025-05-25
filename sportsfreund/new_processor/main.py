@@ -43,6 +43,7 @@ class ExerciseManager:
 
         # Initialisiere Übungs-Analysator
         self.analyzer = SquatAnalyzer(self.config)
+        self.feedback_map = self.analyzer.feedback_map
 
         logging.info(f"ExerciseManager für {self.exercise_name} initialisiert")
 
@@ -129,7 +130,7 @@ class ExerciseManager:
             coords = self.pose_extractor.get_landmark_coordinates(landmarks, width, height)
             joint_angles = self.pose_extractor.calculate_joint_angles(coords)
 
-            analyzed_frame, status = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
+            analyzed_frame, status, feedback_keys = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
 
             if self.debug and frame_number % 30 == 0:
                 print(f"Frame {frame_number}/{frame_count} ({frame_number/frame_count*100:.1f}%)")
@@ -243,7 +244,7 @@ class ExerciseManager:
             coords = self.pose_extractor.get_landmark_coordinates(landmarks, width, height)
             joint_angles = self.pose_extractor.calculate_joint_angles(coords)
 
-            analyzed_frame, status = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
+            analyzed_frame, status, feedback_keys = self.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
 
             cv2.putText(analyzed_frame, f"FPS: {fps:.1f}", (10, 50),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)

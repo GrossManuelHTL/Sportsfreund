@@ -66,3 +66,23 @@ class InstructionExplainer:
             time.sleep(0.1)
 
         pygame.mixer.music.unload()
+
+    def say_sentence_no_wait(self, sentence):
+        print(f"{sentence}")
+        tts = gTTS(sentence, lang='de')
+
+        try:
+            tts.save("temp.mp3")
+        except PermissionError:
+            pygame.mixer.music.unload()
+            time.sleep(0.1)
+            tts.save("temp.mp3")
+
+        logging.info(f"[INFO] Speaking sentence: {sentence}")
+        self.engine.music.load("temp.mp3")
+        self.engine.music.play()
+
+    def stop_speaking(self):
+        self.engine.music.stop()
+        logging.info("[INFO] Stopped speaking.")
+        pygame.mixer.music.unload()
