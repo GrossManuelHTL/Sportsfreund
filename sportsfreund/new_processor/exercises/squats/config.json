@@ -50,7 +50,7 @@
             "priority": 2,
             "phases": ["down", "bottom", "standing"],
             "conditions": {
-                "knee_toe_horizontal_distance": [-25, 25]
+                "knee_toe_horizontal_distance": [-15, 15]
             },
             "threshold": 10
         },
