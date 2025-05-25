@@ -23,7 +23,7 @@ class SquatAnalyzer(AnalyzerBase):
         self.lookLeft = False
 
         # Generiere Feedback-Map aus config_data
-        self.feedback_map = self._generate_feedback_map()
+        self.feedback_map, self.full_feedback_map = self._generate_feedback_map()
 
         # Historien für die Glättung der Messungen
         self.angle_history = {}
@@ -42,6 +42,8 @@ class SquatAnalyzer(AnalyzerBase):
         # Fehlererkennungs-Counter für stabileres Feedback
         self.error_counts = {key: 0 for key in self.feedback_map.keys()}
         self.error_threshold = self.config_data.get('visualization', {}).get('error_persistence_threshold', 3)
+
+        self.phases = self.config_data.get('phases', ['error'])
 
         logging.info(f"SquatAnalyzer für {self.config.get_exercise_name()} initialisiert")
 
@@ -74,8 +76,7 @@ class SquatAnalyzer(AnalyzerBase):
         if 'good_form' not in feedback_map:
             feedback_map['good_form'] = ('GUTE AUSFÜHRUNG', 120, tuple(colors.get('green', (0, 255, 0))))
 
-        logging.info(feedback_map)
-        return feedback_map
+        return feedback_map, feedback_rules
 
     def _write_feedback_to_file(self, feedback_key):
         """
@@ -211,7 +212,7 @@ class SquatAnalyzer(AnalyzerBase):
             ratio = dx / dy
 
         # tolerance
-        logging.info(ratio)
+        #logging.info(ratio)
         return ratio < 5
 
     def _check_knees_over_toes(self, coords, phase):
@@ -374,7 +375,6 @@ class SquatAnalyzer(AnalyzerBase):
 
             # Bedingungen der Regel prüfen
             conditions = rule.get('conditions', {})
-            condition_met = True
 
             if self.lookLeft:
                 self.lowest_knee_angle = min(smoothed_angles['left_knee_angle'], self.lowest_knee_angle)
@@ -496,7 +496,7 @@ class SquatAnalyzer(AnalyzerBase):
                 active_feedback.append('good_form')
 
         #logging.info(error_detected)
-        logging.info(active_feedback)
+        #logging.info(active_feedback)
         return active_feedback
 
     def _count_repetitions(self, debug=False):

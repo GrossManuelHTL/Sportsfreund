@@ -23,8 +23,8 @@
             "direction": "down"
         },
         "bottom": {
-            "left_knee_angle": [70, 110],
-            "right_knee_angle": [70, 110]
+            "left_knee_angle": [70, 90],
+            "right_knee_angle": [70, 90]
         },
         "up": {
             "left_knee_angle": [110, 165],
@@ -35,42 +35,35 @@
     "feedback_rules": {
         "side_position": {
             "description": "BITTE SEITLICH ZUR KAMERA STEHEN",
-            "description_long": "Bitte stelle dich seitlich zur Kamera..",
+            "description_long": "Bitte stellen sie sich seitlich zur Kamera.",
             "color": "red",
             "priority": 1,
             "conditions": {
                 "shoulder_alignment_ratio": [0, 5]
-            }
+            },
+            "threshold": 10
         },
         "knees_over_toes": {
             "description": "KNIE NICHT ÜBER DIE ZEHENSPITZEN",
-            "description_long": "Bitte achte darauf, dass deine Knie nicht über die Zehenspitzen hinausragen.",
+            "description_long": "Die Knie sollen nicht über die Zehenspitzen ragen.",
             "color": "red",
             "priority": 2,
             "phases": ["down", "bottom", "standing"],
             "conditions": {
-                "knee_toe_horizontal_distance": [-30, 30]
-            }
-        },
-        "back_straight": {
-            "description": "RÜCKEN GERADE HALTEN",
-            "description_long": "Bitte halte deinen Rücken gerade während der Übung.",
-            "color": "red",
-            "priority": 2,
-            "phases": ["down", "bottom", "up"],
-            "conditions": {
-                "hip_angle": [160, 180]
-            }
+                "knee_toe_horizontal_distance": [-25, 25]
+            },
+            "threshold": 10
         },
         "squat_depth": {
             "description": "TIEFER GEHEN",
-            "description_long": "Bitte gehe tiefer in die Hocke.",
+            "description_long": "Bitte gehen sie tiefer in die Hocke.",
             "color": "yellow",
             "priority": 3,
-            "phases": ["up", "down", "bottom"],
+            "phases": ["up"],
             "conditions": {
                 "lowest_knee_angle": [0, 90]
-            }
+            },
+            "threshold": 5
         }
     },
     "visualization": {

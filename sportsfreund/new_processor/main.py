@@ -43,7 +43,7 @@ class ExerciseManager:
 
         # Initialisiere Übungs-Analysator
         self.analyzer = SquatAnalyzer(self.config)
-        self.feedback_map = self.analyzer.feedback_map
+        self.full_feedback_map = self.analyzer.full_feedback_map
 
         logging.info(f"ExerciseManager für {self.exercise_name} initialisiert")
 

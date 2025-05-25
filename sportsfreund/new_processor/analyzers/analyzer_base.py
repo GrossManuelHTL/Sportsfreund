@@ -23,6 +23,7 @@ class AnalyzerBase(ABC):
         self.incorrect_rep_count = 0
         self.phase_history = []
         self.feedback_history = []
+        self.phases = []
 
         # Standardfarben für die visuelle Ausgabe
         self.colors = {
@@ -51,6 +52,7 @@ class AnalyzerBase(ABC):
 
         # Feedback-Definitionskarte - kann in abgeleiteten Klassen überschrieben werden
         self.feedback_map = {}
+        self.full_feedback_map = {}
 
         logging.info(f"AnalyzerBase für {self.config.get_exercise_name()} initialisiert")
 
