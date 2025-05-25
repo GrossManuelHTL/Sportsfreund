@@ -69,22 +69,6 @@ class InteractiveTrainer:
 
         return True
 
-    def start_countdown(self):
-        """Startet einen Countdown vor Beginn der Übung"""
-        self.state = WorkoutState.COUNTDOWN
-        print("\nBereite dich vor...")
-        self.instruction_explainer.say_sentence("Bereite dich vor...")
-
-        # Countdown von 5 Sekunden
-        for i in range(self.countdown_seconds, 0, -1):
-            print(f"{i}...")
-            self.instruction_explainer.say_sentence(str(i))
-            time.sleep(1)
-
-        print("LOS!")
-        self.instruction_explainer.say_sentence("Los geht's!")
-        self.state = WorkoutState.EXERCISING
-
     def _generate_exercise_cues(self, exercise_name, phase):
         """Generiert passende Ansagen für jede Phase der Übung"""
         cues = {
@@ -250,6 +234,7 @@ class InteractiveTrainer:
 
             # Rep-Counter prüfen
             if self.exercise_manager.analyzer.rep_count > self.current_rep:
+
                 idx = self.feedback_during_rep.index('good_form') if 'good_form' in self.feedback_during_rep else 0
                 list = self.feedback_during_rep[idx:]   #Rep starts with good_form, because thats the starting pos and everything before that is to find the start pos and is no rep feedback
                 if len(list) == 1 and list[0] == 'good_form':
@@ -265,7 +250,7 @@ class InteractiveTrainer:
                     # Ziel erreicht?
                     if self.current_rep >= self.reps_goal:
                         print("\nZiel erreicht! Super gemacht!")
-                        self.instruction_explainer.say_sentence("Ziel erreicht! Super gemacht!")
+                        self.instruction_explainer.say_sentence_no_wait("Ziel erreicht! Super gemacht!")
                         time.sleep(3)  # Zeit zum Feiern
                         break
                 else:
@@ -311,14 +296,14 @@ class InteractiveTrainer:
             if count / total_feedbacks > 0.4 and feedback_id != 'good_form':
                 feedback_text = self.exercise_manager.analyzer.feedback_map[feedback_id][0]
                 print(f"\nFeedback: {feedback_text}")
-                self.instruction_explainer.say_sentence(feedback_text)
+                self.instruction_explainer.say_sentence_no_wait(feedback_text)
                 return
 
         # Wenn die Ausführung gut ist
         if 'good_form' in feedback_counter:
             good_feedback = "Gut gemacht! Weiter so!"
             print(f"\nFeedback: {good_feedback}")
-            self.instruction_explainer.say_sentence(good_feedback)
+            self.instruction_explainer.say_sentence_no_wait(good_feedback)
 
 def main():
     """
@@ -353,7 +338,6 @@ def main():
 
                 trainer.explain_exercise(args.exercise)
                 input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                trainer.start_countdown()
                 trainer.start_exercise(args.exercise, reps_goal)
             else:
                 print(f"Übung '{args.exercise}' nicht gefunden!")
@@ -392,8 +376,6 @@ def main():
 
             # Übung erklären
             if trainer.explain_exercise(exercise_name):
-                input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                trainer.start_countdown()
                 trainer.start_exercise(exercise_name, reps_goal)
 
     except KeyboardInterrupt:

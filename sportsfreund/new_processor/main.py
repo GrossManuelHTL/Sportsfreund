@@ -363,8 +363,6 @@ def main():
                     reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
 
                     trainer.explain_exercise(args.exercise)
-                    input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                    trainer.start_countdown()
                     trainer.start_exercise(args.exercise, reps_goal)
                 else:
                     print(f"Übung '{args.exercise}' nicht gefunden!")
@@ -405,7 +403,6 @@ def main():
 
                 if trainer.explain_exercise(exercise_name):
                     input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
-                    trainer.start_countdown()
                     trainer.start_exercise(exercise_name, reps_goal)
 
         except KeyboardInterrupt:
