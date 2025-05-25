@@ -191,7 +191,7 @@ class InteractiveTrainer:
             if self.exercise_manager.analyzer.rep_count > self.current_rep:
                 self.current_rep = self.exercise_manager.analyzer.rep_count
                 print(f"Wiederholung {self.current_rep} abgeschlossen!")
-                self.instruction_explainer.say_sentence(f"Wiederholung {self.current_rep}")
+                self.instruction_explainer.say_sentence_no_wait(f"Wiederholung {self.current_rep}")
 
                 # # Bei jeder 4. Wiederholung Feedback geben
                 # if self.current_rep % self.reps_per_feedback == 0 and self.current_rep > self.last_feedback_rep:
@@ -201,7 +201,7 @@ class InteractiveTrainer:
                 # Ziel erreicht?
                 if self.current_rep >= self.reps_goal:
                     print("\nZiel erreicht! Super gemacht!")
-                    self.instruction_explainer.say_sentence("Ziel erreicht! Super gemacht!")
+                    self.instruction_explainer.say_sentence_no_wait("Ziel erreicht! Super gemacht!")
                     time.sleep(3)  # Zeit zum Feiern
                     break
 
@@ -240,14 +240,14 @@ class InteractiveTrainer:
             if count / total_feedbacks > 0.4 and feedback_id != 'good_form':
                 feedback_text = self.exercise_manager.analyzer.feedback_map[feedback_id][0]
                 print(f"\nFeedback: {feedback_text}")
-                self.instruction_explainer.say_sentence(feedback_text)
+                self.instruction_explainer.say_sentence_no_wait(feedback_text)
                 return
 
         # Wenn die Ausführung gut ist
         if 'good_form' in feedback_counter:
             good_feedback = "Gut gemacht! Weiter so!"
             print(f"\nFeedback: {good_feedback}")
-            self.instruction_explainer.say_sentence(good_feedback)
+            self.instruction_explainer.say_sentence_no_wait(good_feedback)
 
 def main():
     """
@@ -320,7 +320,6 @@ def main():
 
             # Übung erklären
             if trainer.explain_exercise(exercise_name):
-                input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
                 trainer.start_exercise(exercise_name, reps_goal)
 
     except KeyboardInterrupt:
