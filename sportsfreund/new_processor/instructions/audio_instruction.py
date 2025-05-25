@@ -85,5 +85,5 @@ class InstructionExplainer:
 
     def stop_speaking(self):
         self.engine.music.stop()
-        logging.info("[INFO] Stopped speaking.")
+        #logging.info("[INFO] Stopped speaking.")
         pygame.mixer.music.unload()
