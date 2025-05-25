@@ -402,7 +402,6 @@ def main():
                     reps_goal = trainer.reps_goal
 
                 if trainer.explain_exercise(exercise_name):
-                    input("\nDrücke ENTER, wenn du bereit bist zu beginnen...")
                     trainer.start_exercise(exercise_name, reps_goal)
 
         except KeyboardInterrupt:
