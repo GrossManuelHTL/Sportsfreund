@@ -188,10 +188,6 @@ class InteractiveTrainer:
             # Verarbeite Frame mit dem Übungs-Analysator
             analyzed_frame, status, feedback_keys = self.exercise_manager.analyzer.analyze_frame(processed_frame, joint_angles, coords, self.debug)
 
-            for key in feedback_keys:
-                if key not in self.feedback_during_rep:
-                    self.feedback_during_rep.append(key)
-
             for key in self.feedback_counters:
                 if key in feedback_keys:
                     self.feedback_counters[key] += 1
@@ -202,6 +198,15 @@ class InteractiveTrainer:
                 else:
                     self.feedback_counters[key] = 0
 
+            logging.info("Feedback_keys: " + ', '.join(feedback_keys))
+            logging.info("Feedback_during_rep " + ', '.join(self.feedback_during_rep))
+
+            for key in feedback_keys:
+                if (key not in self.feedback_during_rep
+                        and self.feedback_counters.get(key, 50) >= self.feedback_thresholds.get(key, 0)):
+                    logging.info("aojdnjalsd")
+                    self.feedback_during_rep.append(key)
+
             for key in self.feedback_counters:
                 count = self.feedback_counters.get(key, 0)
                 if count >= self.feedback_thresholds.get(key, 50):
@@ -211,7 +216,7 @@ class InteractiveTrainer:
 
             if self.current_feedback is not None:
                 feedback_text = self.feedback_tts_description.get(self.current_feedback, "Unbekanntes Problem")
-                print(f"\nFeedback: {feedback_text}")
+                #print(f"\nFeedback: {feedback_text}")
                 self.instruction_explainer.say_sentence_no_wait(feedback_text)
                 self.last_played = self.current_feedback
                 #logging.info(self.current_feedback)
@@ -235,9 +240,9 @@ class InteractiveTrainer:
             # Rep-Counter prüfen
             if self.exercise_manager.analyzer.rep_count > self.current_rep:
 
-                idx = self.feedback_during_rep.index('good_form') if 'good_form' in self.feedback_during_rep else 0
-                list = self.feedback_during_rep[idx:]   #Rep starts with good_form, because thats the starting pos and everything before that is to find the start pos and is no rep feedback
-                if len(list) == 1 and list[0] == 'good_form':
+                #idx = self.feedback_during_rep.index('good_form') if 'good_form' in self.feedback_during_rep else 0
+                #list = self.feedback_during_rep[idx:]   #Rep starts with good_form, because thats the starting pos and everything before that is to find the start pos and is no rep feedback
+                if len(self.feedback_during_rep) == 1 and self.feedback_during_rep[0] == 'good_form':
                     self.current_rep = self.exercise_manager.analyzer.rep_count
                     print(f"Wiederholung {self.current_rep} abgeschlossen!")
                     self.instruction_explainer.say_sentence_no_wait(f"Wiederholung {self.current_rep}")

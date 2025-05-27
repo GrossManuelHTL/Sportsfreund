@@ -69,7 +69,7 @@ class InstructionExplainer:
         pygame.mixer.music.unload()
 
     def say_sentence_no_wait(self, sentence):
-        print(f"{sentence}")
+        #print(f"{sentence}")
         tts = gTTS(sentence, lang='de')
 
         try:

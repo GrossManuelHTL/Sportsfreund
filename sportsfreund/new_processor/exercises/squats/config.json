@@ -39,7 +39,7 @@
             "color": "red",
             "priority": 1,
             "conditions": {
-                "shoulder_alignment_ratio": [0, 5]
+                "shoulder_alignment_ratio": [0, 4.5]
             },
             "threshold": 10
         },
