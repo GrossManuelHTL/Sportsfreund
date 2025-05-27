@@ -1,11 +1,22 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, StackScreenProps } from '@react-navigation/stack';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import ExerciseInstruction from './exerciseInstruction';
 
-// You may need to create this component
-const ExerciseTracking = ({ route }) => {
+// Define the param list for type safety
+type RootStackParamList = {
+  Home: undefined;
+  ExerciseInstruction: { exerciseType: 'squats' | 'push_ups' };
+  ExerciseTracking: { exerciseType: string; reps: number };
+};
+
+// Type the screen props
+type ExerciseTrackingProps = StackScreenProps<RootStackParamList, 'ExerciseTracking'>;
+type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
+
+// Fixed component with proper typing
+const ExerciseTracking: React.FC<ExerciseTrackingProps> = ({ route }) => {
   const { exerciseType, reps } = route.params;
   return (
     <SafeAreaView style={styles.container}>
@@ -17,8 +28,8 @@ const ExerciseTracking = ({ route }) => {
   );
 };
 
-// Home screen component
-const HomeScreen = ({ navigation }) => {
+// Home screen component with proper typing
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>SportsFreund</Text>
@@ -43,7 +54,8 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-const Stack = createStackNavigator();
+// Typed stack navigator
+const Stack = createStackNavigator<RootStackParamList>();
 
 const App = () => {
   return (
@@ -56,7 +68,7 @@ const App = () => {
         />
         <Stack.Screen
           name="ExerciseInstruction"
-          component={ExerciseInstruction}
+          component={ExerciseInstruction as React.ComponentType<any>}
           options={{ title: "Exercise Instructions" }}
         />
         <Stack.Screen
