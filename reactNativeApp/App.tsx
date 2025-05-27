@@ -1,140 +1,114 @@
-import React, { useState, useRef } from 'react';
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import ExerciseInstruction from './exerciseInstruction';
 
-const App: React.FC = () => {
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const scaleValue = useRef(new Animated.Value(1)).current;
-
-  const handleToggle = () => {
-    // Subtle "pop" animation when the user taps the button
-    Animated.sequence([
-      Animated.timing(scaleValue, {
-        toValue: 1.1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleValue, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setIsRunning(!isRunning);
-    });
-  };
-
-  // A simple triangle for the "play" symbol
-  const PlayIcon = () => (
-      <View style={styles.playIconContainer}>
-        <View style={styles.playTriangle} />
-      </View>
-  );
-
-  // Two vertical bars for the "pause" symbol
-  const PauseIcon = () => (
-      <View style={styles.pauseIconContainer}>
-        <View style={styles.pauseBar} />
-        <View style={styles.pauseBar} />
-      </View>
-  );
-
+// You may need to create this component
+const ExerciseTracking = ({ route }) => {
+  const { exerciseType, reps } = route.params;
   return (
-      <View style={styles.container}>
-        <TouchableWithoutFeedback onPress={handleToggle}>
-          <Animated.View
-              style={[styles.bigButton, { transform: [{ scale: scaleValue }] }]}
-          >
-            {isRunning ? <PauseIcon /> : <PlayIcon />}
-          </Animated.View>
-        </TouchableWithoutFeedback>
-
-        <Text style={styles.statusText}>
-          {isRunning ? 'Running' : 'Stopped'}
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Exercise Tracking</Text>
+      <Text style={styles.text}>
+        Tracking {exerciseType}: {reps} repetitions
+      </Text>
+    </SafeAreaView>
   );
 };
 
-export default App;
+// Home screen component
+const HomeScreen = ({ navigation }) => {
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>SportsFreund</Text>
+      <Text style={styles.subtitle}>Choose an exercise to begin</Text>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('ExerciseInstruction', { exerciseType: 'squats' })}
+        >
+          <Text style={styles.buttonText}>Squats</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('ExerciseInstruction', { exerciseType: 'push_ups' })}
+        >
+          <Text style={styles.buttonText}>Push-ups</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const Stack = createStackNavigator();
+
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ExerciseInstruction"
+          component={ExerciseInstruction}
+          options={{ title: "Exercise Instructions" }}
+        />
+        <Stack.Screen
+          name="ExerciseTracking"
+          component={ExerciseTracking}
+          options={{ title: "Exercise Tracking" }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D', // Dark background for high contrast
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
-  bigButton: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: '#f72585', // Vibrant neon-pink color
-    borderWidth: 4,
-    borderColor: '#fff',
-
-    // Center icon within the circle
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    // Neon-like shadow/glow
-    shadowColor: '#f72585',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  statusText: {
-    marginTop: 30,
+  title: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
-
-    // Subtle neon glow for the text
-    textShadowColor: '#f72585',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
   },
-
-  // --- Play Icon ---
-  playIconContainer: {
-    width: 80,
-    height: 80,
-    // The container itself is centered in the bigButton, so no absolute positioning needed
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  playTriangle: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-
-    // A 40×60 triangle: 40 wide, 60 tall
-    borderLeftWidth: 40,
-    borderTopWidth: 30,
-    borderBottomWidth: 30,
-    borderLeftColor: '#fff',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-  },
-
-  // --- Pause Icon ---
-  pauseIconContainer: {
-    width: 80,
-    height: 80,
-    flexDirection: 'row',
+  button: {
+    backgroundColor: '#4A90E2',
+    width: '80%',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  pauseBar: {
-    width: 10,
-    height: 50,
-    backgroundColor: '#fff',
-    marginHorizontal: 5,
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
+  text: {
+    fontSize: 18,
+    marginBottom: 16,
+  }
 });
+
+export default App;
