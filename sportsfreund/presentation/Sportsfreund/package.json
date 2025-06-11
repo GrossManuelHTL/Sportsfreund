@@ -1,0 +1,19 @@
+{
+  "name": "sportsfreund",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@shikijs/engine-javascript": "^3.6.0",
+    "@shikijs/monaco": "^3.6.0",
+    "@slidev/cli": "^51.8.1",
+    "@slidev/theme-default": "latest",
+    "@slidev/theme-seriph": "latest",
+    "@vue/compiler-sfc": "^3.5.16",
+    "vue": "^3.5.16"
+  }
+}
