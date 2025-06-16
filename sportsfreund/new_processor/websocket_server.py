@@ -48,6 +48,54 @@ class TrainerServer:
 
         return available_exercises
 
+    async def monitor_process(self, exercise_name, reps):
+        """Überwacht den laufenden Prozess und sendet Updates"""
+        if not self.active_process:
+            return
+
+        # Auf Prozessende warten (nicht-blockierend)
+        try:
+            while True:
+                if self.active_process.poll() is not None:
+                    break
+                await asyncio.sleep(0.5)  # Kurze Pause zwischen den Prüfungen
+
+            exit_code = self.active_process.returncode
+
+            # Wenn der Prozess normal beendet wurde (Ausführung abgeschlossen)
+            if exit_code == 0:
+                logging.info(f"Übung '{exercise_name}' erfolgreich beendet")
+                await self.send_to_all(json.dumps({
+                    "type": "status",
+                    "status": "completed",
+                    "exercise": exercise_name,
+                    "reps": reps
+                }))
+            # Wenn der Prozess durch stop_exercise terminiert wurde
+            elif exit_code == -15 or exit_code == -9 or exit_code == 1:  # SIGTERM oder SIGKILL
+                logging.info(f"Übung '{exercise_name}' wurde manuell beendet")
+                await self.send_to_all(json.dumps({
+                    "type": "status",
+                    "status": "stopped",
+                    "exercise": exercise_name
+                }))
+            # Wenn ein unerwarteter Fehler auftrat
+            else:
+                stderr = self.active_process.stderr.read() if self.active_process.stderr else ""
+                logging.error(f"Übung mit Fehlercode {exit_code} beendet: {stderr}")
+                await self.send_to_all(json.dumps({
+                    "type": "error",
+                    "message": f"Übung wurde mit Fehler beendet (Code {exit_code})"
+                }))
+        except Exception as e:
+            logging.error(f"Fehler in der Prozessüberwachung: {str(e)}")
+            await self.send_to_all(json.dumps({
+                "type": "error",
+                "message": f"Fehler bei der Übungsüberwachung: {str(e)}"
+            }))
+        finally:
+            self.active_process = None
+
     async def start_exercise(self, exercise_name, reps):
         """Übung mit dem interaktiven Trainer starten"""
         if self.active_process and self.active_process.poll() is None:
@@ -68,7 +116,7 @@ class TrainerServer:
                 "reps": reps
             }))
 
-            
+            asyncio.create_task(self.monitor_process(exercise_name, reps))
 
             return True
         except Exception as e:

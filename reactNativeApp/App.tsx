@@ -52,6 +52,15 @@ const App: React.FC = () => {
     loadServerUrl();
   }, []);
 
+    // WebSocket-Verbindung beim Beenden schließen
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [socket]);
+
   // WebSocket-Verbindung aufbauen
   const connectToServer = () => {
     if (socket) {
@@ -98,6 +107,11 @@ const App: React.FC = () => {
               setIsRunning(false);
               setStatus('Übung beendet');
             }
+            else if (message.status === 'completed') {
+              setIsRunning(false);
+              setStatus(`Übung abgeschlossen: ${message.exercise}, ${message.reps} Wiederholungen`);
+              Alert.alert('Übung abgeschlossen', 'Herzlichen Glückwunsch! Du hast dein Trainingsziel erreicht.');
+            }
           }
           else if (message.type === 'error') {
             Alert.alert('Fehler', message.message);
@@ -130,6 +144,26 @@ const App: React.FC = () => {
       setConnecting(false);
       setStatus('Verbindungsfehler');
       Alert.alert('Fehler', 'Fehler beim Herstellen der Verbindung');
+    }
+  };
+
+    // Verbindung trennen
+  const disconnectFromServer = () => {
+    if (socket) {
+      // Wenn eine Übung läuft, beende diese zuerst
+      if (isRunning) {
+        socket.send(JSON.stringify({
+          type: "stop"
+        }));
+        setIsRunning(false);
+        setStatus('Übung gestoppt');
+      }
+
+      // Dann die Verbindung trennen
+      socket.close();
+      setSocket(null);
+      setConnected(false);
+      setStatus('Verbindung getrennt');
     }
   };
 
@@ -192,14 +226,19 @@ const App: React.FC = () => {
           placeholderTextColor="#888"
         />
         <TouchableOpacity 
-          style={[styles.button, styles.connectButton]} 
-          onPress={connectToServer}
+          style={[
+            styles.button,
+            connected ? styles.disconnectButton : styles.connectButton
+          ]}
+          onPress={connected ? disconnectFromServer : connectToServer}
           disabled={connecting}
         >
           {connecting ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Verbinden</Text>
+            <Text style={styles.buttonText}>
+              {connected ? 'Trennen' : 'Verbinden'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -376,6 +415,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+  disconnectButton: {
+    backgroundColor: '#e63946',
+    height: 50,
+    paddingHorizontal: 15,
+    justifyContent: 'center',
+  }
 });
 
 export default App;
