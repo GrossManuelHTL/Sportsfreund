@@ -2,10 +2,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const steps = [
-  { icon: '🏃‍♂️', text: 'Person macht eine Kniebeuge' },
-  { icon: '🤖', text: 'Sportsfreund erkennt die Bewegung' },
-  { icon: '💡', text: 'KI analysiert die Haltung' },
-  { icon: '🔊', text: 'Feedback wird gesprochen: "Super gemacht! Noch etwas tiefer gehen."' }
+  { icon: '🏃‍♂️', text: 'Person performs a squat' },
+  { icon: '🤖', text: 'Sportsfreund detects the movement' },
+  { icon: '💡', text: 'AI analyzes the posture' },
+  { icon: '🔊', text: 'Feedback is spoken: "Great job! Go a bit deeper."' }
 ]
 
 const currentStep = ref(0)

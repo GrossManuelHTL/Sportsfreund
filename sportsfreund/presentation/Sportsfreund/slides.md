@@ -1,5 +1,5 @@
 ---
-title: "Sportsfreund: Der AI Coach für alle"
+title: "Sportsfreund: The AI Coach for Everyone"
 theme: seriph
 highlighter: shiki
 layout: center
@@ -13,7 +13,7 @@ fonts:
 
 <h1 class="title">Sportsfreund</h1>
 
-<div class="subtitle">Der AI Coach</div>
+<div class="subtitle">The AI Coach</div>
 
 <div class="authors">
 M. Gross • M. Oswald • C. Stadlmair • V. Harrer
@@ -23,42 +23,48 @@ M. Gross • M. Oswald • C. Stadlmair • V. Harrer
 
 ---
 
-# Überblick
+# Overview
 
-- Motivation & Problemstellung
-- Unsere Vision  
-- Wie funktioniert der Sportsfreund?
-- Ausblick & nächste Schritte
-
----
-
-# Motivation & Problemstellung
-
-- Viele ältere und sehbehinderte Menschen haben eingeschränkten Zugang zu Sportangeboten
-- Fehlendes Feedback bei Übungen kann zu Verletzungen führen
-- Ziel: **Barrierefreie, sichere und motivierende Bewegung**
+- Motivation & Problems
+- Our Vision  
+- How does Sportsfreund work?
+- Outlook & Next Steps
 
 ---
 
-# Unsere Vision
+# Motivation & Problems
 
-- Ein AI Coach, der **live** mit Computer Vision Bewegungen erkennt
-- Gibt **auditives Feedback** in Echtzeit
-- Fördert Selbstständigkeit und Gesundheit
-- Für alle zugänglich, einfach zu bedienen
-
----
-
-# Wie funktioniert Sportsfreund?
-
-- **Computer Vision:** Kamera erkennt Bewegungen in Echtzeit
-- **KI-Analyse:** Intelligente Bewertung der Bewegungsqualität  
-- **Auditives Feedback:** Sofortige Korrekturen ("Rücken gerade halten!")
-- **Motivation:** Positive Verstärkung für nachhaltige Fortschritte
+- Many elderly and visually impaired people have limited access to sports activities
+- Lack of feedback during exercises can lead to injuries
+- Goal: **Barrier-free, safe and motivating movement**
 
 ---
 
-# Technologie Stack
+# Our Vision
+
+- An AI Coach that detects movements **live** with computer vision
+- Provides **auditory feedback** in real-time
+- Promotes independence and health
+- Accessible to everyone, easy to use
+
+---
+
+# How does Sportsfreund work?
+
+- **Computer Vision:** Camera detects movements in real-time
+- **AI Analysis:** Intelligent evaluation of movement quality  
+- **Auditory Feedback:** Immediate corrections ("Keep your back straight!")
+- **Motivation:** Positive reinforcement for sustainable progress
+---
+
+# Challenges
+
+- **Scaling the AI Model:** It's hard to predict whether or not a model runs reliably on a small device
+- **Feedback Quality:** How much training is needed for a model to generate quality feedback
+
+---
+
+# Technology Stack
 
 <TechStack />
 
@@ -70,12 +76,11 @@ M. Gross • M. Oswald • C. Stadlmair • V. Harrer
 
 ---
 
-# Ausblick & nächste Schritte
+# Outlook & Next Steps
 
-- **Erweiterte Übungen:** Mehr Bewegungsarten und Trainingspläne
-- **Mobile App:** Benutzerfreundliche iOS/Android Anwendung
-- **Partnerschaften:** Kooperationen mit Sport- & Sozialverbänden  
-- **KI-Erweiterung:** Verbesserte Modelle und höhere Präzision
+- **AI Application:** Develop a practical and functioning AI Workflow
+- **Partnerships:** Collaborations with sports & social organizations  
+- **AI Enhancement:** Improved models and higher precision
 
 ---
 layout: center
@@ -83,6 +88,6 @@ layout: center
 
 <div class="thank-you-container">
 
-# Danke für die Aufmerksamkeit!
+# Thank you for your attention!
 
 </div>

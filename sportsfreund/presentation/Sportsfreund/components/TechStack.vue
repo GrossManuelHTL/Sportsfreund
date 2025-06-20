@@ -5,19 +5,19 @@ const technologies = [
   { 
     icon: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg', 
     name: 'Python', 
-    description: 'Hauptprogrammiersprache für KI & Backend',
+    description: 'Main Language for Processing & Backend',
     isPrimary: false
   },
   { 
     icon: 'https://opencv.org/wp-content/uploads/2022/05/logo.png', 
     name: 'OpenCV', 
-    description: 'Computer Vision & Bildverarbeitung',
+    description: 'Computer Vision & Key Point Detection',
     isPrimary: false
   },
   { 
     icon: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg', 
     name: 'Scikit-Learn', 
-    description: 'Machine Learning Algorithmen',
+    description: 'Machine Learning Algorithms',
     isPrimary: false
   },
   { 
@@ -29,7 +29,7 @@ const technologies = [
   { 
     icon: 'https://nodejs.org/static/images/logo.svg', 
     name: 'Node.js', 
-    description: 'Backend & Datenspeicherung',
+    description: 'Backend & Database Management',
     isPrimary: false
   }
 ]
