@@ -25,10 +25,16 @@ M. Gross • M. Oswald • C. Stadlmair • V. Harrer
 
 # Overview
 
+<div class="compact-overview">
+
 - Motivation & Problems
 - Our Vision  
 - How does Sportsfreund work?
+- Challenges
+- Technology Stack
+- Live Demo
 - Outlook & Next Steps
+</div>
 
 ---
 
@@ -66,21 +72,28 @@ M. Gross • M. Oswald • C. Stadlmair • V. Harrer
 
 # Technology Stack
 
-<TechStack />
+- **Python**
+- **OpenCV**
+- **Scikit-Learn**
+- **TensorFlow**
+- **Node.js**
 
 ---
 
 # Live Demo
 
-<LiveDemo />
+1. **Exercise Selection** - Person selects exercise type and target reps
+2. **Exercise Performance** - Person performs the selected exercise
+3. **Live Analysis** - Sportsfreund analyzes and counts reps in real-time
+4. **Live Feedback** - *"Squat not low enough!"*
 
 ---
 
 # Outlook & Next Steps
 
 - **AI Application:** Develop a practical and functioning AI Workflow
-- **Partnerships:** Collaborations with sports & social organizations  
 - **AI Enhancement:** Improved models and higher precision
+- **Partnerships:** Collaborations with sports & social organizations  
 
 ---
 layout: center
