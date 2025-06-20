@@ -42,7 +42,9 @@ M. Gross • M. Oswald • C. Stadlmair • V. Harrer
 
 - Many elderly and visually impaired people have limited access to sports activities
 - Lack of feedback during exercises can lead to injuries
-- Goal: **Barrier-free, safe and motivating movement**
+- Traditional fitness solutions often require specialized equipment or supervision
+- Current technology solutions are not accessible for people with visual impairments
+- Goal: **Barrier-free, safe and guided movement**
 
 ---
 
