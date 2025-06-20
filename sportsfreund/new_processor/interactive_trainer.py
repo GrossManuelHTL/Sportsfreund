@@ -322,6 +322,8 @@ def main():
                         help='Index der Webcam (0 für Standardkamera)')
     parser.add_argument('--debug', action='store_true',
                         help='Debug-Modus aktivieren')
+    parser.add_argument('--reps', type=int, default=-1,
+                        help='Anzahl der Wiederholungen')
 
     args = parser.parse_args()
 
@@ -338,8 +340,11 @@ def main():
             if args.exercise in available_exercises:
                 print(f"Starte direkt mit Übung: {args.exercise}")
 
-                # Anzahl der Wiederholungen
-                reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
+                if args.reps > 0:
+                    reps_goal = args.reps
+                else:
+                    # Anzahl der Wiederholungen
+                    reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
 
                 trainer.explain_exercise(args.exercise)
                 trainer.start_exercise(args.exercise, reps_goal)

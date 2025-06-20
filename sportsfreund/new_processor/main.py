@@ -316,6 +316,8 @@ def main():
 
     parser.add_argument('--exercise', type=str,
                         help='Name der zu analysierenden Übung')
+    parser.add_argument('--reps', type=int, default=-1,
+                        help='Anzahl der Wiederholungen')
 
     # Hauptmodus-Gruppe
     mode_group = parser.add_mutually_exclusive_group(required=True)
@@ -360,7 +362,11 @@ def main():
                     print(f"Starte direkt mit Übung: {args.exercise}")
 
                     # Anzahl der Wiederholungen
-                    reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
+                    if args.reps > 0:
+                        reps_goal = args.reps
+                    else:
+                        # Frage nach der Anzahl der Wiederholungen
+                        reps_goal = int(input(f"Wie viele Wiederholungen möchtest du machen? (Standard: {trainer.reps_goal}): ") or trainer.reps_goal)
 
                     trainer.explain_exercise(args.exercise)
                     trainer.start_exercise(args.exercise, reps_goal)
