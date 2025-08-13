@@ -1,0 +1,24 @@
+{
+  "exercise_name": "squat",
+  "training_data": {
+    "correct_reps": [
+      "testvideos/squat_multiple.mp4"
+    ]
+  },
+  "rep_detection": {
+    "enabled": true,
+    "method": "ml",
+    "signal_processing_fallback": true
+  },
+  "form_validation": {
+    "enabled": true,
+    "error_types": [],
+    "confidence_threshold": 0.7
+  },
+  "training_parameters": {
+    "frame_skip": 3,
+    "min_rep_duration": 15,
+    "max_rep_duration": 60
+  }
+}
+

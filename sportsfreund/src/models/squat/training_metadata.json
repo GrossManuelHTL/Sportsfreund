@@ -1,0 +1,53 @@
+{
+  "exercise_name": "squat",
+  "config": {
+    "exercise_name": "squat",
+    "training_data": {
+      "correct_reps": [
+        "testvideos/squat_multiple.mp4"
+      ]
+    },
+    "rep_detection": {
+      "enabled": true,
+      "method": "ml",
+      "signal_processing_fallback": true
+    },
+    "form_validation": {
+      "enabled": true,
+      "error_types": [],
+      "confidence_threshold": 0.7
+    },
+    "training_parameters": {
+      "frame_skip": 3,
+      "min_rep_duration": 15,
+      "max_rep_duration": 60
+    }
+  },
+  "training_results": {
+    "rep_detection": {
+      "accuracy": 1.0,
+      "total_samples": 238,
+      "rep_samples": 7,
+      "feature_importance": {
+        "knee_angle_avg": 0.3581109385018321,
+        "hip_height": 0.3998164786818468,
+        "knee_distance": 0.2420725828163212,
+        "movement_velocity": 0.0
+      }
+    },
+    "form_validation": {
+      "accuracy": 1.0,
+      "total_samples": 238,
+      "error_types": [
+        "correct"
+      ],
+      "class_distribution": {
+        "correct": 238
+      }
+    }
+  },
+  "model_paths": {
+    "rep_model": "models/squat/rep_model.pkl",
+    "form_model": "models/squat/form_model.pkl"
+  }
+}
