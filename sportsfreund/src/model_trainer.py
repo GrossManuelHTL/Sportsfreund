@@ -4,7 +4,6 @@ import pickle
 import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from scipy.signal import find_peaks
 from pose_extractor import PoseExtractor
 
@@ -16,31 +15,39 @@ class ModelTrainer:
         self.scalers = {}
 
     def train_from_videos(self, single_rep_videos, multi_rep_videos):
-        print(f"Training {self.exercise_name}")
+        print(f"Training {self.exercise_name} phase model")
 
         all_features = []
-        all_labels = []
+        all_phase_labels = []
 
         for video in single_rep_videos:
+            print(f"Processing single rep video: {video}")
             features = self._extract_features(video)
             if features:
-                labels = self._label_single_rep(features)
+                phase_labels = self._label_single_rep_phases(features)
                 all_features.extend(features)
-                all_labels.extend(labels)
+                all_phase_labels.extend(phase_labels)
+                print(f"Added {len(features)} frames with phases: {set(phase_labels)}")
 
         for video in multi_rep_videos:
+            print(f"Processing multi rep video: {video}")
             features = self._extract_features(video)
             if features:
-                labels = self._label_multi_rep(features)
+                phase_labels = self._label_multi_rep_phases(features)
                 all_features.extend(features)
-                all_labels.extend(labels)
+                all_phase_labels.extend(phase_labels)
+                print(f"Added {len(features)} frames with phases: {set(phase_labels)}")
 
         if len(all_features) > 20:
-            self._train_phase_model(all_features, all_labels)
-            self._train_rep_model(all_features, all_labels)
+            print(f"Training with {len(all_features)} total frames")
+            print(f"Phase distribution: {dict(zip(*np.unique(all_phase_labels, return_counts=True)))}")
+
+            self._train_phase_model(all_features, all_phase_labels)
             self._save_models()
             return True
-        return False
+        else:
+            print(f"Not enough training data: {len(all_features)} frames")
+            return False
 
     def _extract_features(self, video_path):
         cap = cv2.VideoCapture(video_path)
@@ -50,160 +57,258 @@ class ModelTrainer:
             ret, frame = cap.read()
             if not ret:
                 break
-            landmarks = self.pose_extractor.extract(frame)
-            if landmarks is not None:
-                features.append(landmarks)
+            pose_data = self.pose_extractor.extract_from_frame(frame)
+            if pose_data is not None:
+                # Extrahiere alle Features wie im RepCounter
+                feature_vector = []
+                feature_vector.extend(pose_data['raw_landmarks'])
+                feature_vector.extend(list(pose_data['angles'].values()))
+                feature_vector.extend(list(pose_data['positions'].values()))
+                features.append(feature_vector)
 
         cap.release()
         return features
 
-    def _label_single_rep(self, features):
+    def _label_single_rep_phases(self, features):
+        """Labelt die Phasen für ein Video mit einer einzelnen Wiederholung"""
         if len(features) < 10:
             return ["unknown"] * len(features)
 
-        knee_pos = [(f[75] + f[78]) / 2 for f in features]  # avg knee y
-        min_idx = np.argmin(knee_pos)
-        total = len(features)
+        # Verwende Kniehöhe als Hauptindikator für Squat-Phasen
+        if self.exercise_name == "squat":
+            return self._label_squat_phases(features)
+        elif self.exercise_name == "pushup":
+            return self._label_pushup_phases(features)
+        else:
+            return self._label_generic_phases(features)
+
+    def _label_squat_phases(self, features):
+        """Spezifische Phasen-Labeling für Squats"""
+        # Extrahiere Kniehöhe (Durchschnitt beider Knie)
+        knee_heights = []
+        for f in features:
+            left_knee_y = f[75]  # linkes Knie Y
+            right_knee_y = f[78]  # rechtes Knie Y
+            avg_knee_y = (left_knee_y + right_knee_y) / 2
+            knee_heights.append(avg_knee_y)
+
+        knee_heights = np.array(knee_heights)
+
+        # Finde den tiefsten Punkt (höchster Y-Wert)
+        bottom_idx = np.argmax(knee_heights)
+        total_frames = len(features)
 
         labels = []
-        for i in range(total):
-            if i < min_idx * 0.4:
+        for i in range(total_frames):
+            progress = i / total_frames
+
+            if i <= bottom_idx * 0.3:
                 labels.append("start")
-            elif i < min_idx * 1.6:
+            elif i <= bottom_idx * 0.8:
                 labels.append("down")
+            elif i <= bottom_idx * 1.2:
+                labels.append("bottom")
             else:
                 labels.append("up")
+
         return labels
 
-    def _label_multi_rep(self, features):
+    def _label_pushup_phases(self, features):
+        """Spezifische Phasen-Labeling für Push-ups"""
+        # Verwende Ellbogen-Y-Position als Indikator
+        elbow_heights = []
+        for f in features:
+            left_elbow_y = f[42]  # linkes Ellbogen Y
+            right_elbow_y = f[45]  # rechtes Ellbogen Y
+            avg_elbow_y = (left_elbow_y + right_elbow_y) / 2
+            elbow_heights.append(avg_elbow_y)
+
+        elbow_heights = np.array(elbow_heights)
+        bottom_idx = np.argmax(elbow_heights)
+        total_frames = len(features)
+
+        labels = []
+        for i in range(total_frames):
+            if i <= bottom_idx * 0.3:
+                labels.append("start")
+            elif i <= bottom_idx * 0.8:
+                labels.append("down")
+            elif i <= bottom_idx * 1.2:
+                labels.append("bottom")
+            else:
+                labels.append("up")
+
+        return labels
+
+    def _label_generic_phases(self, features):
+        """Generisches Phasen-Labeling für unbekannte Übungen"""
+        total_frames = len(features)
+        quarter = total_frames // 4
+
+        labels = []
+        for i in range(total_frames):
+            if i < quarter:
+                labels.append("start")
+            elif i < quarter * 2:
+                labels.append("down")
+            elif i < quarter * 3:
+                labels.append("bottom")
+            else:
+                labels.append("up")
+
+        return labels
+
+    def _label_multi_rep_phases(self, features):
+        """Labelt Phasen für Videos mit mehreren Wiederholungen"""
         if len(features) < 20:
             return ["unknown"] * len(features)
 
-        knee_pos = [(f[75] + f[78]) / 2 for f in features]
-        smoothed = np.convolve(knee_pos, np.ones(5)/5, mode='same')
+        if self.exercise_name == "squat":
+            position_data = [(f[75] + f[78]) / 2 for f in features]  # Kniehöhe
+        elif self.exercise_name == "pushup":
+            position_data = [(f[42] + f[45]) / 2 for f in features]  # Ellbogenhöhe
+        else:
+            position_data = [(f[75] + f[78]) / 2 for f in features]  # Default: Kniehöhe
 
-        peaks, _ = find_peaks(smoothed, distance=10)
-        valleys, _ = find_peaks(-smoothed, distance=10)
+        # Glätte die Daten
+        smoothed = np.convolve(position_data, np.ones(5)/5, mode='same')
+
+        # Finde Peaks (höchste Punkte = "start"/"up") und Valleys (tiefste Punkte = "bottom")
+        peaks, _ = find_peaks(smoothed, distance=15, prominence=0.02)
+        valleys, _ = find_peaks(-smoothed, distance=15, prominence=0.02)
 
         labels = ["transition"] * len(features)
 
+        # Markiere Bereiche um Peaks als "start" oder "up"
         for peak in peaks:
-            for i in range(max(0, peak-3), min(len(labels), peak+4)):
-                labels[i] = "up"
+            for i in range(max(0, peak-5), min(len(labels), peak+6)):
+                labels[i] = "start" if i == peak else "up"
 
+        # Markiere Bereiche um Valleys als "bottom"
         for valley in valleys:
             for i in range(max(0, valley-3), min(len(labels), valley+4)):
-                labels[i] = "down"
+                labels[i] = "bottom"
+
+        # Markiere Bereiche zwischen start/up und bottom als "down"
+        for i in range(len(labels)):
+            if labels[i] == "transition":
+                # Schaue nach vorherigem und nächstem Label
+                prev_significant = self._find_previous_significant_label(labels, i)
+                next_significant = self._find_next_significant_label(labels, i)
+
+                if (prev_significant in ["start", "up"] and next_significant == "bottom") or \
+                   (prev_significant == "bottom" and next_significant in ["start", "up"]):
+                    labels[i] = "down" if prev_significant in ["start", "up"] else "up"
+
+        # Bereinige übrig gebliebene "transition" Labels
+        for i in range(len(labels)):
+            if labels[i] == "transition":
+                labels[i] = "start"  # Default fallback
 
         return labels
 
-    def _train_phase_model(self, features, labels):
-        X = np.array(features)
-        y = np.array(labels)
+    def _find_previous_significant_label(self, labels, index):
+        """Findet das vorherige signifikante Label (nicht 'transition')"""
+        for i in range(index-1, -1, -1):
+            if labels[i] != "transition":
+                return labels[i]
+        return "start"
 
+    def _find_next_significant_label(self, labels, index):
+        """Findet das nächste signifikante Label (nicht 'transition')"""
+        for i in range(index+1, len(labels)):
+            if labels[i] != "transition":
+                return labels[i]
+        return "start"
+
+    def _train_phase_model(self, features, phase_labels):
+        """Trainiert das Phasen-Erkennungsmodell"""
+        X = np.array(features)
+        y = np.array(phase_labels)
+
+        # Entferne 'unknown' Labels für besseres Training
+        valid_indices = y != "unknown"
+        X = X[valid_indices]
+        y = y[valid_indices]
+
+        if len(X) < 10:
+            print("Not enough valid training data for phase model")
+            return
+
+        # Skaliere Features
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
-        model = RandomForestClassifier(n_estimators=50, random_state=42)
+        # Trainiere Modell mit class_weight für unausgewogene Daten
+        model = RandomForestClassifier(
+            n_estimators=100,
+            random_state=42,
+            class_weight='balanced',
+            max_depth=10
+        )
         model.fit(X_scaled, y)
 
         self.models['phase'] = model
         self.scalers['phase'] = scaler
 
-    def _train_rep_model(self, features, labels):
-        rep_features = []
-        rep_labels = []
-        
-        print(f"Training rep model with {len(features)} features and labels: {set(labels)}")
-        
-        # Neue Strategie: Lerne das komplette Rep-Pattern aus Single-Rep Videos
-        # Suche nach vollständigen Bewegungszyklen: start -> down -> up
-        
-        i = 0
-        while i < len(labels) - 10:  # Mindestens 10 Frames für einen Rep
-            # Suche nach Start eines Reps
-            if labels[i] in ["start", "up"]:
-                # Schaue voraus ob ein kompletter Zyklus folgt
-                cycle_end = self._find_complete_cycle(labels, i)
-                
-                if cycle_end > i:
-                    # Kompletter Zyklus gefunden - markiere Mittelpunkt als Rep
-                    cycle_length = cycle_end - i
-                    rep_center = i + cycle_length // 2
-                    
-                    # Der zentrale Frame ist ein Rep
-                    rep_features.append(features[rep_center])
-                    rep_labels.append("rep")
-                    
-                    # Frames drumherum sind keine Reps
-                    for j in range(max(0, i), min(len(features), cycle_end)):
-                        if j != rep_center:
-                            rep_features.append(features[j])
-                            rep_labels.append("no_rep")
-                    
-                    i = cycle_end  # Springe zum Ende des Zyklus
-                else:
-                    # Kein kompletter Zyklus - markiere als no_rep
-                    rep_features.append(features[i])
-                    rep_labels.append("no_rep")
-                    i += 1
-            else:
-                # Übergangsframe - markiere als no_rep
-                rep_features.append(features[i])
-                rep_labels.append("no_rep")
-                i += 1
-        
-        print(f"Rep model data: {len(rep_features)} samples, {rep_labels.count('rep')} reps, {rep_labels.count('no_rep')} no_reps")
-        
-        if len(rep_features) > 10 and rep_labels.count('rep') > 0 and rep_labels.count('no_rep') > 0:
-            X = np.array(rep_features)
-            y = np.array(rep_labels)
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            
-            model = RandomForestClassifier(n_estimators=50, random_state=42, class_weight='balanced')
-            model.fit(X_scaled, y)
-            
-            self.models['rep'] = model
-            self.scalers['rep'] = scaler
-            print("Rep model trained successfully!")
-            print(f"Model learned from {rep_labels.count('rep')} rep examples")
-        else:
-            print(f"Not enough data for rep model: {len(rep_features)} samples, {rep_labels.count('rep')} reps")
-    
-    def _find_complete_cycle(self, labels, start_idx):
-        """Findet das Ende eines kompletten Bewegungszyklus"""
-        down_seen = False
-        up_seen = False
-        
-        for i in range(start_idx, min(len(labels), start_idx + 30)):  # Max 30 Frames pro Rep
-            if labels[i] == "down":
-                down_seen = True
-            elif down_seen and labels[i] in ["up", "start"]:
-                up_seen = True
-                return i + 1  # Ende des Zyklus
-        
-        return start_idx  # Kein kompletter Zyklus gefunden
+        # Zeige Trainingsstatistiken
+        unique_labels, counts = np.unique(y, return_counts=True)
+        print(f"Phase model trained with:")
+        for label, count in zip(unique_labels, counts):
+            print(f"  {label}: {count} samples")
 
-    def _save_models(self):
-        os.makedirs("models", exist_ok=True)
-
-        data = {
-            'exercise': self.exercise_name,
-            'models': self.models,
-            'scalers': self.scalers
-        }
-
-        with open(f"models/{self.exercise_name}.pkl", 'wb') as f:
-            pickle.dump(data, f)
+        # Evaluiere das Modell
+        score = model.score(X_scaled, y)
+        print(f"Phase model training accuracy: {score:.3f}")
 
     def load_models(self):
-        try:
-            with open(f"models/{self.exercise_name}.pkl", 'rb') as f:
-                data = pickle.load(f)
-            self.models = data['models']
-            self.scalers = data['scalers']
-            return True
-        except:
+        """Lädt die trainierten Modelle"""
+        model_dir = "models"
+        if not os.path.exists(model_dir):
             return False
+
+        phase_model_path = f"{model_dir}/{self.exercise_name}_phase_model.pkl"
+        phase_scaler_path = f"{model_dir}/{self.exercise_name}_phase_scaler.pkl"
+
+        try:
+            if os.path.exists(phase_model_path) and os.path.exists(phase_scaler_path):
+                with open(phase_model_path, 'rb') as f:
+                    self.models['phase'] = pickle.load(f)
+                with open(phase_scaler_path, 'rb') as f:
+                    self.scalers['phase'] = pickle.load(f)
+                print(f"Loaded phase model for {self.exercise_name}")
+                return True
+        except Exception as e:
+            print(f"Error loading models: {e}")
+
+        return False
+
+    def _save_models(self):
+        """Speichert die trainierten Modelle"""
+        model_dir = "models"
+        os.makedirs(model_dir, exist_ok=True)
+
+
+        if 'phase' in self.models:
+            phase_model_path = f"{model_dir}/{self.exercise_name}_phase_model.pkl"
+            phase_scaler_path = f"{model_dir}/{self.exercise_name}_phase_scaler.pkl"
+
+            with open(phase_model_path, 'wb') as f:
+                pickle.dump(self.models['phase'], f)
+            with open(phase_scaler_path, 'wb') as f:
+                pickle.dump(self.scalers['phase'], f)
+
+            print(f"Saved phase model for {self.exercise_name}")
+
+    def predict_phase(self, features):
+        """Vorhersage der Phase basierend auf Features"""
+        if 'phase' not in self.models or 'phase' not in self.scalers:
+            return "unknown"
+
+        try:
+            features_scaled = self.scalers['phase'].transform([features])
+            phase = self.models['phase'].predict(features_scaled)[0]
+            return phase
+        except Exception as e:
+            print(f"Prediction error: {e}")
+            return "unknown"

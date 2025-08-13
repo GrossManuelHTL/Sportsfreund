@@ -4,8 +4,8 @@ Implements squat-specific rep detection and form validation
 """
 import numpy as np
 from typing import Dict, List, Any
-from ..core.exercise_base import ExerciseAnalyzer
-from ..ai.ml_models import MLRepDetectionModel, MLFormValidationModel, SignalProcessingRepDetector
+from exercise_base import ExerciseAnalyzer
+from ml_models import MLRepDetectionModel, MLFormValidationModel, SignalProcessingRepDetector
 
 class SquatAnalyzer(ExerciseAnalyzer):
     """Squat-specific exercise analyzer"""

@@ -4,11 +4,11 @@ Central orchestration of video analysis, training, and feedback
 """
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from core.video_analyzer import VideoAnalyzer
-from training.exercise_trainer import ExerciseTrainer
-from exercises.squat_analyzer import SquatAnalyzer
-from ai.ml_models import MLRepDetectionModel, MLFormValidationModel
+from typing import Dict, List, Any
+from video_analyzer import VideoAnalyzer
+from exercise_trainer import ExerciseTrainer
+from squat_analyzer import SquatAnalyzer
+
 
 class ExerciseAnalysisSystem:
     """Main system for exercise analysis and training"""

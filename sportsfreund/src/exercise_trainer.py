@@ -5,9 +5,10 @@ Handles data preparation and model training for any exercise type
 import json
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from ..core.video_analyzer import VideoAnalyzer
-from ..ai.ml_models import MLRepDetectionModel, MLFormValidationModel
+from typing import Dict, List, Any
+from video_analyzer import VideoAnalyzer
+from ml_models import MLRepDetectionModel, MLFormValidationModel
+from ml_models import SignalProcessingRepDetector
 
 class ExerciseTrainer:
     """Trains AI models for exercise analysis"""
@@ -85,7 +86,24 @@ class ExerciseTrainer:
         form_training_data = []
         form_labels = []
 
-        # Process correct rep videos
+        # Process single rep videos (videos showing exactly one repetition)
+        single_rep_videos = training_config.get('single_reps', [])
+        for video_path in single_rep_videos:
+            print(f"Processing single rep: {video_path}")
+            video_data = self.video_analyzer.analyze_video(video_path)
+
+            if video_data['pose_sequence']:
+                # For single rep videos, label the entire sequence as one rep cycle
+                rep_frames, rep_frame_labels = self._label_single_rep_frames(video_data['pose_sequence'])
+                rep_training_data.extend(rep_frames)
+                rep_labels.extend(rep_frame_labels)
+
+                # Also add to form data as correct examples
+                for pose_data in video_data['pose_sequence']:
+                    form_training_data.append(pose_data)
+                    form_labels.append('correct')
+
+        # Process correct rep videos (multiple reps)
         correct_videos = training_config.get('correct_reps', [])
         for video_path in correct_videos:
             print(f"Processing correct reps: {video_path}")
@@ -119,7 +137,6 @@ class ExerciseTrainer:
 
     def _label_rep_frames(self, pose_sequence: List[Dict]) -> tuple:
         """Label frames for rep detection using signal processing"""
-        from ..ai.ml_models import SignalProcessingRepDetector
 
         # Extract movement features
         movement_features = self._extract_movement_features(pose_sequence)
@@ -206,3 +223,30 @@ class ExerciseTrainer:
 
         with open(metadata_path, 'w') as f:
             json.dump(metadata, f, indent=2)
+
+
+    def _label_single_rep_frames(self, pose_sequence: List[Dict]) -> tuple:
+        """Label frames for single rep videos - entire sequence represents one rep"""
+        frames = pose_sequence.copy()
+        total_frames = len(frames)
+
+        # For single rep videos, we know the entire sequence is one rep
+        # Mark the middle portion as the actual rep execution
+        labels = []
+
+        for i, frame in enumerate(frames):
+            progress = i / total_frames
+
+            # Start phase (0-20%)
+            if progress < 0.2:
+                labels.append(0)  # Not a rep yet
+            # Rep execution phase (20-80%)
+            elif progress < 0.8:
+                labels.append(1)  # Active rep
+            # End phase (80-100%)
+            else:
+                labels.append(0)  # Rep completed
+
+        print(f"Single rep labeled: {sum(labels)} rep frames out of {len(labels)} total frames")
+        return frames, labels
+

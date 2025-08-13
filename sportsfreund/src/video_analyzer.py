@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from typing import List, Dict, Optional, Callable
 from pathlib import Path
-from ..core.pose_extractor import PoseExtractor
+from pose_extractor import PoseExtractor
 
 class VideoAnalyzer:
     def __init__(self, frame_skip: int = 2):

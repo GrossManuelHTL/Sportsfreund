@@ -5,12 +5,11 @@ import numpy as np
 import pickle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import accuracy_score
 from scipy.signal import find_peaks
 from typing import Dict, List, Any
 from pathlib import Path
-from ..core.exercise_base import RepDetectionModel, FormValidationModel
+from exercise_base import RepDetectionModel, FormValidationModel
 
 class MLRepDetectionModel(RepDetectionModel):
     """Machine Learning based rep detection using Random Forest"""

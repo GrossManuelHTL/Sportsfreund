@@ -6,6 +6,8 @@ import sys
 import argparse
 from pathlib import Path
 from exercise_system import ExerciseAnalysisSystem, FeedbackGenerator
+from rep_counter import RepCounter
+
 
 def main():
     parser = argparse.ArgumentParser(description='Exercise Analysis System')
@@ -14,6 +16,10 @@ def main():
     # Training command
     train_parser = subparsers.add_parser('train', help='Train models for an exercise')
     train_parser.add_argument('--config', help='Path to training configuration file')
+
+    rep_count_parser = subparsers.add_parser('repcount', help='Rep count for an exercise')
+    rep_count_parser.add_argument('--video', help='Path to video file for rep counting', default='testvideos/squat_single.mp4')
+    rep_count_parser.add_argument('--exercise', help='Exercise type (squat, pushup, etc.)', default='squat')
 
     # Analysis command
     analyze_parser = subparsers.add_parser('analyze', help='Analyze a video')
@@ -41,6 +47,10 @@ def main():
             analyze_video(system, args)
         elif args.command == 'list':
             list_exercises(system)
+        elif args.command == 'repcount':
+            repcounter = RepCounter(args.exercise)
+            repcounter.count_video(args.video)
+
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
