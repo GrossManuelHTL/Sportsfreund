@@ -1,4 +1,4 @@
-# Uni-Wien-Fun
+# Sportsfreund
 
 ## Description
 
