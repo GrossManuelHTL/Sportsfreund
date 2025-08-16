@@ -1,0 +1,82 @@
+{
+  "name": "squat",
+  "description": "Standard squat exercise with full range of motion",
+  "initial_state": "standing",
+  "target_joints": ["left_knee", "right_knee", "left_hip", "right_hip", "back"],
+
+  "rep_pattern": ["standing", "bottom", "standing"],
+
+  "states": {
+  "standing": {
+    "conditions": {
+      "min_left_knee_angle": 160,
+      "min_right_knee_angle": 160
+    }
+  },
+  "bottom": {
+    "conditions": {
+      "max_right_knee_angle": 110,
+      "max_left_knee_angle": 110
+    }
+  }
+},
+
+  "error_checks": [
+    {
+      "condition": {
+        "type": "angle_range",
+        "angle": "left_knee",
+        "min": 30,
+        "max": 50
+      },
+      "message": "Knie zu tief gebeugt - Verletzungsgefahr!",
+      "type": "safety",
+      "priority": 5
+    },
+    {
+      "condition": {
+        "type": "angle_range",
+        "angle": "right_knee",
+        "min": 30,
+        "max": 50
+      },
+      "message": "Knie zu tief gebeugt - Verletzungsgefahr!",
+      "type": "safety",
+      "priority": 5
+    },
+    {
+      "condition": {
+        "type": "angle_range",
+        "angle": "left_knee",
+        "min": 120,
+        "max": 140
+      },
+      "message": "Knie nicht tief genug - gehe weiter runter",
+      "type": "warning",
+      "priority": 2
+    },
+    {
+      "condition": {
+        "type": "angle_range",
+        "angle": "back",
+        "min": 160,
+        "max": 180
+      },
+      "message": "Rücken zu weit nach vorne gebeugt",
+      "type": "error",
+      "priority": 3
+    },
+    {
+      "condition": {
+        "type": "position_threshold",
+        "position": "hip_center",
+        "axis": "y",
+        "threshold": 0.8,
+        "operator": ">"
+      },
+      "message": "Hüfte nicht tief genug",
+      "type": "warning",
+      "priority": 2
+    }
+  ]
+}

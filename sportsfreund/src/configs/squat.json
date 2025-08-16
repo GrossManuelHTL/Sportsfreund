@@ -1,7 +1,0 @@
-{
-  "exercise_name": "squat",
-  "single_rep_videos": ["testvideos/squat_single.mp4"],
-  "multi_rep_videos": ["testvideos/squat_multiple.mp4"],
-  "frame_skip": 3
-}
-

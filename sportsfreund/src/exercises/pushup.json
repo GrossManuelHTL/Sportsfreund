@@ -1,0 +1,104 @@
+{
+  "name": "pushup",
+  "description": "Standard push-up exercise with proper form",
+  "initial_state": "plank_up",
+  "target_joints": ["left_elbow", "right_elbow", "left_shoulder", "right_shoulder", "back"],
+  "rep_pattern": ["plank_up", "descending", "bottom", "ascending", "plank_up"],
+
+  "states": {
+    "plank_up": {
+      "conditions": {
+        "angle_range": {
+          "left_elbow": {"min": 160, "max": 180},
+          "right_elbow": {"min": 160, "max": 180}
+        },
+        "position_range": {
+          "hip_height": {"min": 0.4, "max": 0.6}
+        }
+      }
+    },
+
+    "descending": {
+      "conditions": {
+        "angle_range": {
+          "left_elbow": {"min": 90, "max": 160},
+          "right_elbow": {"min": 90, "max": 160}
+        }
+      }
+    },
+
+    "bottom": {
+      "conditions": {
+        "angle_range": {
+          "left_elbow": {"min": 70, "max": 100},
+          "right_elbow": {"min": 70, "max": 100}
+        }
+      }
+    },
+
+    "ascending": {
+      "conditions": {
+        "angle_range": {
+          "left_elbow": {"min": 90, "max": 160},
+          "right_elbow": {"min": 90, "max": 160}
+        }
+      }
+    }
+  },
+
+  "error_checks": [
+    {
+      "name": "elbow_flare",
+      "message": "Keep elbows closer to your body",
+      "type": "warning",
+      "priority": 3,
+      "check_in_states": ["descending", "bottom", "ascending"],
+      "condition": {
+        "type": "angle_difference",
+        "joint1": "left_elbow",
+        "joint2": "right_elbow",
+        "max_difference": 10
+      }
+    },
+    {
+      "name": "sagging_hips",
+      "message": "Keep your body straight - engage your core",
+      "type": "warning",
+      "priority": 2,
+      "check_in_states": ["plank_up", "descending", "bottom", "ascending"],
+      "condition": {
+        "type": "angle_threshold",
+        "joint": "back",
+        "operator": ">",
+        "threshold": 190
+      }
+    },
+    {
+      "name": "partial_range",
+      "message": "Go lower - chest should nearly touch the ground",
+      "type": "info",
+      "priority": 1,
+      "check_in_states": ["bottom"],
+      "condition": {
+        "type": "angle_threshold",
+        "joint": "left_elbow",
+        "operator": ">",
+        "threshold": 100
+      }
+    },
+    {
+      "name": "wrist_safety",
+      "message": "CAREFUL! Avoid hyperextending your wrists",
+      "type": "safety",
+      "priority": 5,
+      "check_in_states": ["plank_up", "descending", "bottom", "ascending"],
+      "condition": {
+        "type": "angle_threshold",
+        "joint": "left_elbow",
+        "operator": "<",
+        "threshold": 60
+      }
+    }
+  ]
+}
+
