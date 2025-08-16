@@ -2,7 +2,7 @@
 
 ## Description
 
-**Uni-Wien-Fun** is a box (like a tonie box), that is designed to help people with advanced age perform exercises. The box should explain video exercises. The box should compare the user exercises to the video and give feedback to the user to correct the user.
+**Sportsfreund** is a box (like a tonie box), that is designed to help people with advanced age perform exercises. The box should explain video exercises. The box should compare the user exercises to the video and give feedback to the user to correct the user.
 
 ## Audience
 
