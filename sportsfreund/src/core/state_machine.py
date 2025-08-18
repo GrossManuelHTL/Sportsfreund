@@ -26,25 +26,20 @@ class StateMachine:
         self.state_history = []
         self.frame_time = 0
 
-        # Load states from config
         self._load_states(exercise_config.get('states', {}))
 
-        # Set initial state
         initial_state = exercise_config.get('initial_state', 'standing')
         self.current_state = initial_state
 
-        # Simple rep pattern - nur die wichtigen States für Rep-Zählung
         self.rep_pattern = exercise_config.get('rep_pattern')
-        self.pattern_progress = 0  # Aktueller Fortschritt im Pattern
+        self.pattern_progress = 0
 
-        # Stability tracking
         self.frames_in_current_state = 0
         self.state_confidence = 0
         self.min_confidence_for_transition = 5  # Frames needed to confirm transition
 
-        # Rep detection improvements
         self.last_rep_frame = 0
-        self.min_frames_between_reps = 20  # Minimum frames between rep counts
+        self.min_frames_between_reps = 10  # Minimum frames between rep counts
 
     def _load_states(self, states_config: Dict[str, Any]):
         """Load states from configuration"""
@@ -80,7 +75,6 @@ class StateMachine:
             # Reset confidence if we don't consistently see the same new state
             self.state_confidence = max(0, self.state_confidence - 1)
 
-        # Check for rep completion with improved logic
         self._check_rep_completion()
 
         return self._get_status()
@@ -91,7 +85,7 @@ class StateMachine:
         positions = pose_data.get('positions', {})
         for state_name, state_obj in self.states.items():
             if self.current_state == state_name:
-                continue  # nicht im selben State bleiben
+                continue # Skip current state
             if self._evaluate_state_conditions(state_obj.conditions, angles, positions):
                 return state_name
         return None
@@ -101,18 +95,16 @@ class StateMachine:
         try:
             for key, val in conditions.items():
                 if key.endswith('angle'):
-                    # z.B. min_knee_angle, max_knee_angle
                     joint = key.replace('min_', '').replace('max_', '').replace('_angle', '')
                     angle = angles.get(joint, 1000)
-                    if angle is not 1000:
+                    if angle is not 1000: # we'll find something smarter later...
                         if key.startswith('min_') and angle < val:
                             return False
                         if key.startswith('max_') and angle > val:
                             return False
                 elif key.endswith('position'):
-                    # z.B. min_hip_position, max_hip_position
                     joint = key.replace('min_', '').replace('max_', '').replace('_position', '')
-                    pos = positions.get(joint, {}).get('y', 1000)
+                    pos = positions.get(joint, {}).get('y', 1000) # same here
                     if pos is not 1000:
                         if key.startswith('min_') and pos < val:
                             return False
@@ -142,27 +134,23 @@ class StateMachine:
             self.states[new_state].entry_time = self.frame_time
 
     def _check_rep_completion(self):
-        """Generisch: prüft, ob das rep_pattern in der richtigen Reihenfolge durchlaufen wurde und zählt dann einen Rep."""
+        """Checks if the current state matches the expected rep pattern"""
         if not self.rep_pattern or len(self.rep_pattern) < 2:
             return
         if self.frame_time - self.last_rep_frame < self.min_frames_between_reps:
             return
-        # Prüfe, ob der aktuelle State dem erwarteten State im Pattern entspricht
+
         expected_state = self.rep_pattern[self.pattern_progress]
 
-        print(f"Checking rep pattern: Current State: {self.current_state}, Expected State: {expected_state}, Progress: {self.pattern_progress}")
         if self.current_state == expected_state:
             self.pattern_progress += 1
-            # Wenn das Pattern komplett durchlaufen wurde, Rep zählen
             if self.pattern_progress == len(self.rep_pattern):
                 self.rep_count += 1
                 self.last_rep_frame = self.frame_time
                 self.pattern_progress = 0
                 print(f"🎉 REP COMPLETED! Count: {self.rep_count} (Pattern: {' → '.join(self.rep_pattern)})")
-        # Wenn der User wieder beim Start-State des Patterns ist, pattern_progress zurücksetzen
         elif self.current_state == self.rep_pattern[0]:
             self.pattern_progress = 1
-        # Wenn ein State erreicht wird, der nicht ins Pattern passt, pattern_progress zurücksetzen
         elif self.current_state not in self.rep_pattern:
             self.pattern_progress = 0
 
@@ -188,4 +176,4 @@ class StateMachine:
         self.state_confidence = 0
         self.pattern_progress = 0
         self.last_rep_frame = 0
-        print("🔄 State machine reset")
+        print("state machine reset")
