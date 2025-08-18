@@ -3,45 +3,23 @@
   "description": "Standard push-up exercise with proper form",
   "initial_state": "plank_up",
   "target_joints": ["left_elbow", "right_elbow", "left_shoulder", "right_shoulder", "back"],
-  "rep_pattern": ["plank_up", "descending", "bottom", "ascending", "plank_up"],
+  "rep_pattern": ["plank_up","bottom","plank_up"],
 
   "states": {
     "plank_up": {
       "conditions": {
-        "angle_range": {
-          "left_elbow": {"min": 160, "max": 180},
-          "right_elbow": {"min": 160, "max": 180}
-        },
-        "position_range": {
-          "hip_height": {"min": 0.4, "max": 0.6}
-        }
+        "min_left_elbow_angle": 160,
+        "min_right_elbow_angle": 160,
+        "max_left_elbow_angle": 180,
+        "max_right_elbow_angle": 180
       }
     },
-
-    "descending": {
-      "conditions": {
-        "angle_range": {
-          "left_elbow": {"min": 90, "max": 160},
-          "right_elbow": {"min": 90, "max": 160}
-        }
-      }
-    },
-
     "bottom": {
       "conditions": {
-        "angle_range": {
-          "left_elbow": {"min": 70, "max": 100},
-          "right_elbow": {"min": 70, "max": 100}
-        }
-      }
-    },
-
-    "ascending": {
-      "conditions": {
-        "angle_range": {
-          "left_elbow": {"min": 90, "max": 160},
-          "right_elbow": {"min": 90, "max": 160}
-        }
+        "min_left_elbow_angle": 70,
+        "min_right_elbow_angle": 70,
+        "max_left_elbow_angle": 110,
+        "max_right_elbow_angle": 110
       }
     }
   },

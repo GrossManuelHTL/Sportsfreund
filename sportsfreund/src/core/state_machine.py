@@ -36,10 +36,10 @@ class StateMachine:
 
         self.frames_in_current_state = 0
         self.state_confidence = 0
-        self.min_confidence_for_transition = 5  # Frames needed to confirm transition
+        self.min_confidence_for_transition = 2  # Frames needed to confirm transition
 
         self.last_rep_frame = 0
-        self.min_frames_between_reps = 10  # Minimum frames between rep counts
+        self.min_frames_between_reps = 0  # Minimum frames between rep counts
 
     def _load_states(self, states_config: Dict[str, Any]):
         """Load states from configuration"""
@@ -97,6 +97,7 @@ class StateMachine:
                 if key.endswith('angle'):
                     joint = key.replace('min_', '').replace('max_', '').replace('_angle', '')
                     angle = angles.get(joint, 1000)
+                    print("Current angle for", joint, "is", angle)
                     if angle is not 1000: # we'll find something smarter later...
                         if key.startswith('min_') and angle < val:
                             return False

@@ -32,6 +32,23 @@ def print_custom_feedback(feedback_item):
     print(f"{emoji} {feedback_item.type.value.upper()}: {feedback_item.message}")
 
 
+def resize_frame_for_display(frame, max_width=800, max_height=600):
+    """Resize frame to fit within fixed window size while maintaining aspect ratio"""
+    height, width = frame.shape[:2]
+    
+    # Calculate scaling factor
+    scale_width = max_width / width
+    scale_height = max_height / height
+    scale = min(scale_width, scale_height, 1.0)  # Don't upscale
+    
+    if scale < 1.0:
+        new_width = int(width * scale)
+        new_height = int(height * scale)
+        frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    
+    return frame
+
+
 def display_pose_info(pose_data):
     """Display current pose angles and positions"""
     if not pose_data:
@@ -48,40 +65,53 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
     """Draw enhanced overlay with detailed information"""
     height, width = frame.shape[:2]
 
+    # Calculate font scale based on frame size (relative to 800x600 reference)
+    font_scale_base = min(width / 800, height / 600)
+    font_scale_large = max(0.5, font_scale_base * 0.8)
+    font_scale_medium = max(0.4, font_scale_base * 0.6)
+    font_scale_small = max(0.3, font_scale_base * 0.4)
+
+    # Calculate thickness based on scale
+    thickness_large = max(1, int(font_scale_base * 2))
+    thickness_medium = max(1, int(font_scale_base * 1.5))
+    thickness_small = max(1, int(font_scale_base * 1))
+
     # Create overlay with semi-transparent background
     overlay = frame.copy()
 
     # Status panel background (erweitert für mehr Info)
-    cv2.rectangle(overlay, (10, 10), (450, 280), (0, 0, 0), -1)
+    panel_width = int(450 * font_scale_base)
+    panel_height = int(280 * font_scale_base)
+    cv2.rectangle(overlay, (10, 10), (10 + panel_width, 10 + panel_height), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
 
     # Title
-    cv2.putText(frame, "EXERCISE ANALYSIS", (20, 35),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+    cv2.putText(frame, "EXERCISE ANALYSIS", (20, int(35 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_large, (0, 255, 255), thickness_large)
 
     # Current state with color coding
     state_color = (0, 255, 0) if status['state'] != 'standing' else (128, 128, 128)
-    cv2.putText(frame, f"State: {status['state']}", (20, 65),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, state_color, 2)
+    cv2.putText(frame, f"State: {status['state']}", (20, int(65 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_medium, state_color, thickness_medium)
 
     # State stability info
     frames_in_state = status.get('frames_in_state', 0)
     state_confidence = status.get('state_confidence', 0)
-    cv2.putText(frame, f"Stability: {frames_in_state}f | Conf: {state_confidence}", (20, 85),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+    cv2.putText(frame, f"Stability: {frames_in_state}f | Conf: {state_confidence}", (20, int(85 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (200, 200, 200), thickness_small)
 
     # Rep counter with highlighting
     rep_color = (0, 255, 0) if status['reps'] > 0 else (255, 255, 255)
-    cv2.putText(frame, f"Reps: {status['reps']}", (20, 110),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, rep_color, 2)
+    cv2.putText(frame, f"Reps: {status['reps']}", (20, int(110 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_medium, rep_color, thickness_medium)
 
     # Exercise name
-    cv2.putText(frame, f"Exercise: {status['exercise']}", (20, 135),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.putText(frame, f"Exercise: {status['exercise']}", (20, int(135 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 255), thickness_small)
 
     # Frame counter
-    cv2.putText(frame, f"Frame: {status['frame']}", (20, 155),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    cv2.putText(frame, f"Frame: {status['frame']}", (20, int(155 * font_scale_base)),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 255), thickness_small)
 
     # Pose data if available
     if pose_data:
@@ -93,69 +123,78 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
         right_knee = angles.get('right_knee', 0)
         avg_knee = (left_knee + right_knee) / 2
 
-        cv2.putText(frame, f"L Knee: {left_knee:.1f}°", (20, 180),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
-        cv2.putText(frame, f"R Knee: {right_knee:.1f}°", (20, 200),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
-        cv2.putText(frame, f"Avg: {avg_knee:.1f}°", (20, 220),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+        cv2.putText(frame, f"L Knee: {left_knee:.1f}°", (20, int(180 * font_scale_base)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 0), thickness_small)
+        cv2.putText(frame, f"R Knee: {right_knee:.1f}°", (20, int(200 * font_scale_base)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 0), thickness_small)
+        cv2.putText(frame, f"Avg: {avg_knee:.1f}°", (20, int(220 * font_scale_base)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (0, 255, 255), thickness_small)
 
         # Recent state history
         state_history = status.get('state_history', [])
         if state_history:
             history_text = " -> ".join([h['to'] for h in state_history[-3:]])
-            cv2.putText(frame, f"History: {history_text}", (20, 260),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+            cv2.putText(frame, f"History: {history_text}", (20, int(260 * font_scale_base)),
+                        cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (200, 200, 200), thickness_small)
 
         # Hip position indicator (rechts)
         hip_y = positions.get('hip_center', {}).get('y', 0.5)
         indicator_y = int(height * 0.8)
         indicator_x = int(width * 0.9)
 
-        # Draw hip height indicator
-        cv2.line(frame, (indicator_x - 20, indicator_y - 50),
-                (indicator_x - 20, indicator_y + 50), (255, 255, 255), 2)
+        # Scale indicator elements
+        indicator_size = int(50 * font_scale_base)
+        line_thickness = max(1, int(2 * font_scale_base))
+        circle_radius = max(3, int(5 * font_scale_base))
 
-        current_hip_y = int(indicator_y - 50 + (hip_y * 100))
-        cv2.circle(frame, (indicator_x - 20, current_hip_y), 5, (0, 255, 0), -1)
-        cv2.putText(frame, "Hip", (indicator_x - 35, indicator_y + 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        # Draw hip height indicator
+        cv2.line(frame, (indicator_x - 20, indicator_y - indicator_size),
+                (indicator_x - 20, indicator_y + indicator_size), (255, 255, 255), line_thickness)
+
+        current_hip_y = int(indicator_y - indicator_size + (hip_y * indicator_size * 2))
+        cv2.circle(frame, (indicator_x - 20, current_hip_y), circle_radius, (0, 255, 0), -1)
+        cv2.putText(frame, "Hip", (indicator_x - int(35 * font_scale_base), indicator_y + int(70 * font_scale_base)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 255), thickness_small)
 
         # Knee angle indicator (links von Hip)
         knee_indicator_x = int(width * 0.85)
-        knee_bar_height = 100
-        knee_bar_top = indicator_y - 50
+        knee_bar_height = int(100 * font_scale_base)
+        knee_bar_top = indicator_y - indicator_size
 
         # Draw knee angle bar (0-180°)
         cv2.line(frame, (knee_indicator_x, knee_bar_top),
-                (knee_indicator_x, knee_bar_top + knee_bar_height), (255, 255, 255), 2)
+                (knee_indicator_x, knee_bar_top + knee_bar_height), (255, 255, 255), line_thickness)
 
         # Mark current angle
         normalized_angle = min(180, max(0, avg_knee)) / 180
         current_angle_y = int(knee_bar_top + knee_bar_height - (normalized_angle * knee_bar_height))
-        cv2.circle(frame, (knee_indicator_x, current_angle_y), 4, (255, 255, 0), -1)
+        cv2.circle(frame, (knee_indicator_x, current_angle_y), max(2, int(4 * font_scale_base)), (255, 255, 0), -1)
 
         # Angle thresholds markers
-        cv2.line(frame, (knee_indicator_x - 5, knee_bar_top + int(knee_bar_height * 0.39)),
-                (knee_indicator_x + 5, knee_bar_top + int(knee_bar_height * 0.39)), (0, 0, 255), 2)  # 110°
-        cv2.line(frame, (knee_indicator_x - 5, knee_bar_top + int(knee_bar_height * 0.22)),
-                (knee_indicator_x + 5, knee_bar_top + int(knee_bar_height * 0.22)), (255, 165, 0), 2)  # 140°
-        cv2.line(frame, (knee_indicator_x - 5, knee_bar_top + int(knee_bar_height * 0.11)),
-                (knee_indicator_x + 5, knee_bar_top + int(knee_bar_height * 0.11)), (0, 255, 0), 2)  # 160°
+        threshold_size = max(3, int(5 * font_scale_base))
+        cv2.line(frame, (knee_indicator_x - threshold_size, knee_bar_top + int(knee_bar_height * 0.39)),
+                (knee_indicator_x + threshold_size, knee_bar_top + int(knee_bar_height * 0.39)), (0, 0, 255), line_thickness)  # 110°
+        cv2.line(frame, (knee_indicator_x - threshold_size, knee_bar_top + int(knee_bar_height * 0.22)),
+                (knee_indicator_x + threshold_size, knee_bar_top + int(knee_bar_height * 0.22)), (255, 165, 0), line_thickness)  # 140°
+        cv2.line(frame, (knee_indicator_x - threshold_size, knee_bar_top + int(knee_bar_height * 0.11)),
+                (knee_indicator_x + threshold_size, knee_bar_top + int(knee_bar_height * 0.11)), (0, 255, 0), line_thickness)  # 160°
 
-        cv2.putText(frame, "Knee°", (knee_indicator_x - 20, indicator_y + 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(frame, "Knee°", (knee_indicator_x - int(20 * font_scale_base), indicator_y + int(70 * font_scale_base)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 255), thickness_small)
 
     # Error display
     if errors:
-        error_y = 300
-        cv2.rectangle(frame, (10, error_y), (width - 10, error_y + 30 * len(errors) + 10),
+        error_y = int(300 * font_scale_base)
+        error_height = int(30 * font_scale_base)
+        cv2.rectangle(frame, (10, error_y), (width - 10, error_y + error_height * len(errors) + 10),
                      (0, 0, 128), -1)
 
         for i, error in enumerate(errors):
             color = (0, 0, 255) if error['type'] == 'error' else (0, 255, 255)
-            cv2.putText(frame, f"⚠ {error['message']}", (20, error_y + 25 + i * 30),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            cv2.putText(frame, f"⚠ {error['message']}", (20, error_y + int(25 * font_scale_base) + i * error_height),
+                       cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, color, thickness_small)
+
+    # Controls instructions
     instructions = [
         "Controls:",
         "Q - Quit",
@@ -163,10 +202,11 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
         "SPACE - Pause"
     ]
 
-    start_y = height - 100
+    start_y = height - int(100 * font_scale_base)
+    start_x = width - int(150 * font_scale_base)
     for i, instruction in enumerate(instructions):
-        cv2.putText(frame, instruction, (width - 150, start_y + i * 20),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+        cv2.putText(frame, instruction, (start_x, start_y + i * int(20 * font_scale_base)),
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (200, 200, 200), thickness_small)
 
     return frame
 
@@ -223,59 +263,67 @@ def analyze_video(video_path: str, exercise_name: str):
 
             frame_count += 1
 
-        if frame_count % 2 == 0 or paused:
+        # Process every 2nd frame for performance, but display all frames
+        process_frame = frame_count % 2 == 0 or paused
 
-            if not paused:
-                result = manager.process_frame(frame)
+        if process_frame and not paused:
+            result = manager.process_frame(frame)
 
-                if "error" in result:
-                    print(f"⚠️ Frame {frame_count}: {result['error']}")
-                    cv2.putText(frame, f"Error: {result['error']}", (20, 50),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                else:
-                    status = manager.get_current_status()
+            if "error" in result:
+                print(f"⚠️ Frame {frame_count}: {result['error']}")
+                cv2.putText(frame, f"Error: {result['error']}", (20, 50),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            else:
+                status = manager.get_current_status()
 
-                    if status["reps"] > last_rep_count:
-                        print(f"🎉 REP COMPLETED! Total reps: {status['reps']}")
-                        last_rep_count = status["reps"]
+                if status["reps"] > last_rep_count:
+                    print(f"🎉 REP COMPLETED! Total reps: {status['reps']}")
+                    last_rep_count = status["reps"]
 
-                    pose_data = result.get("pose_data")
-                    if pose_data:
-                        frame = manager.pose_extractor.draw_pose(frame, pose_data)
+                pose_data = result.get("pose_data")
+                if pose_data:
+                    frame = manager.pose_extractor.draw_pose(frame, pose_data)
 
-                    frame = draw_enhanced_overlay(frame, pose_data, status, [])
+                frame = draw_enhanced_overlay(frame, pose_data, status, [])
 
-                    if frame_count % 60 == 0:
-                        print(f"\n📊 Frame {frame_count}/{total_frames} | State: {status['state']} | Reps: {status['reps']}")
-                        display_pose_info(pose_data)
+                if frame_count % 60 == 0:
+                    print(f"\n📊 Frame {frame_count}/{total_frames} | State: {status['state']} | Reps: {status['reps']}")
+                    display_pose_info(pose_data)
+        elif not paused:
+            # For frames we don't process, still get the current status for overlay
+            status = manager.get_current_status()
+            frame = draw_enhanced_overlay(frame, None, status, [])
 
-            # Add pause indicator
-            if paused:
-                cv2.putText(frame, "PAUSED - Press SPACE to continue",
-                           (frame.shape[1]//2 - 150, frame.shape[0]//2),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        # Add pause indicator
+        if paused:
+            cv2.putText(frame, "PAUSED - Press SPACE to continue",
+                       (frame.shape[1]//2 - 150, frame.shape[0]//2),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
-            # Progress bar
-            if total_frames > 0:
-                progress = frame_count / total_frames
-                bar_width = frame.shape[1] - 20
-                bar_height = 10
-                bar_y = frame.shape[0] - 30
+        # Progress bar
+        if total_frames > 0:
+            progress = frame_count / total_frames
+            bar_width = frame.shape[1] - 20
+            bar_height = 10
+            bar_y = frame.shape[0] - 30
 
-                cv2.rectangle(frame, (10, bar_y), (10 + bar_width, bar_y + bar_height),
-                             (100, 100, 100), -1)
-                cv2.rectangle(frame, (10, bar_y), (10 + int(bar_width * progress), bar_y + bar_height),
-                             (0, 255, 0), -1)
+            cv2.rectangle(frame, (10, bar_y), (10 + bar_width, bar_y + bar_height),
+                         (100, 100, 100), -1)
+            cv2.rectangle(frame, (10, bar_y), (10 + int(bar_width * progress), bar_y + bar_height),
+                         (0, 255, 0), -1)
 
-                # Progress text
-                cv2.putText(frame, f"{progress:.1%}", (10, bar_y - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+            # Progress text
+            cv2.putText(frame, f"{progress:.1%}", (10, bar_y - 5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
-            # Show frame
-            cv2.imshow('Exercise Analysis', frame)
+        # Resize frame for display
+        frame = resize_frame_for_display(frame)
 
-        # Handle keyboard input
-        key = cv2.waitKey(30) & 0xFF
+        # Show frame
+        cv2.imshow('Exercise Analysis', frame)
+
+        # Handle keyboard input with reduced delay for smoother playback
+        key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             print("🛑 User requested quit")
             break
