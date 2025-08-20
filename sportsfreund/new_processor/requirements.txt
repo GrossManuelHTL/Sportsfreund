@@ -1,7 +1,0 @@
-mediapipe
-opencv-python
-pyttsx3
-scikit-learn
-numpy
-websockets
-asyncio

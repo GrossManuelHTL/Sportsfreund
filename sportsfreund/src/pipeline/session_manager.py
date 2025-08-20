@@ -74,8 +74,8 @@ class SessionManager:
 
         if self.audio_system:
             self.audio_system.speak(
-                f"Trainingseinheit gestartet. {exercise_name}. "
-                f"{target_sets} Sets mit jeweils {target_reps_per_set} Wiederholungen."
+                f"Training session started. {exercise_name}. "
+                f"{target_sets} sets of {target_reps_per_set} repetitions each."
             )
 
         return session_id
@@ -107,7 +107,7 @@ class SessionManager:
         print(f"🏋️ Set {set_number} started")
 
         if self.audio_system:
-            self.audio_system.speak(f"Set {set_number} beginnt jetzt. Bereit?")
+            self.audio_system.speak(f"Set {set_number} starts now. Ready?")
 
         return True
 
@@ -196,18 +196,18 @@ class SessionManager:
         form_score = set_summary["form_score"]
 
         # Basic feedback
-        feedback_text = f"Set {set_summary['set_number']} abgeschlossen. "
-        feedback_text += f"{reps_completed} von {target_reps} Wiederholungen. "
+        feedback_text = f"Set {set_summary['set_number']} completed. "
+        feedback_text += f"{reps_completed} of {target_reps} repetitions. "
 
         # Form evaluation
         if form_score >= 0.8:
-            feedback_text += "Ausgezeichnete Ausführung! "
+            feedback_text += "Excellent form! "
         elif form_score >= 0.6:
-            feedback_text += "Gute Ausführung. "
+            feedback_text += "Good form. "
         elif form_score >= 0.4:
-            feedback_text += "Ausführung kann verbessert werden. "
+            feedback_text += "Form can be improved. "
         else:
-            feedback_text += "Achte mehr auf die korrekte Ausführung. "
+            feedback_text += "Focus more on correct form. "
 
         # Specific feedback from collected items
         feedback_items = self.current_session.sets[-1].feedback_items if self.current_session.sets else []
@@ -215,9 +215,9 @@ class SessionManager:
         error_count = len([f for f in feedback_items if f["severity"] == "error"])
 
         if error_count > 0:
-            feedback_text += f"{error_count} Ausführungsfehler erkannt. "
+            feedback_text += f"{error_count} form errors detected. "
         elif warning_count > 0:
-            feedback_text += f"{warning_count} Verbesserungshinweise. "
+            feedback_text += f"{warning_count} improvement suggestions. "
 
         self.audio_system.speak(feedback_text)
 
@@ -264,16 +264,16 @@ class SessionManager:
         avg_score = self.current_session.overall_form_score
         duration_minutes = self.current_session.total_duration_seconds / 60
 
-        summary_text = f"Training abgeschlossen! "
-        summary_text += f"{total_sets} Sets mit insgesamt {total_reps} Wiederholungen. "
-        summary_text += f"Trainingsdauer: {duration_minutes:.1f} Minuten. "
+        summary_text = f"Training completed! "
+        summary_text += f"{total_sets} sets with {total_reps} total repetitions. "
+        summary_text += f"Training duration: {duration_minutes:.1f} minutes. "
 
         if avg_score >= 0.8:
-            summary_text += "Hervorragende Leistung! "
+            summary_text += "Excellent performance! "
         elif avg_score >= 0.6:
-            summary_text += "Gute Leistung! "
+            summary_text += "Good performance! "
         else:
-            summary_text += "Weiter so, beim nächsten Mal wird es noch besser! "
+            summary_text += "Keep going, next time will be even better! "
 
         self.audio_system.speak(summary_text)
 

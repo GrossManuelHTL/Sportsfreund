@@ -89,7 +89,7 @@ class ErrorChecker:
         self.error_checks = exercise_config.get('error_checks', [])
         self.feedback_handler = None
 
-        # Sammle Fehler für Ende der Session
+        # Collect errors for end of session
         self.collected_errors = []
         self.error_counts = {}
 
@@ -98,49 +98,49 @@ class ErrorChecker:
         self.feedback_handler = feedback_handler
 
     def check_errors(self, pose_data: Dict[str, Any]) -> List[FeedbackItem]:
-        """Check for errors in current pose data - sammle nur, zeige NICHT sofort"""
+        """Check for errors in current pose data - collect only, do NOT show immediately"""
         if not pose_data:
             return []
 
         angles = pose_data.get('angles', {})
         positions = pose_data.get('positions', {})
 
-        # Sammle Fehler nur im Hintergrund - gib KEINE Live-Fehler zurück
+        # Collect errors only in background - return NO live errors
         for check in self.error_checks:
             if self._evaluate_condition(check['condition'], angles, positions):
                 error_key = check['message']
 
-                # Zähle Fehler für Statistik
+                # Count errors for statistics
                 if error_key not in self.error_counts:
                     self.error_counts[error_key] = 0
                 self.error_counts[error_key] += 1
 
-        # Gib IMMER leere Liste zurück - keine Live-Anzeige
+        # ALWAYS return empty list - no live display
         return []
 
     def get_final_feedback(self) -> List[str]:
-        """Gib finales Feedback basierend auf gesammelten Fehlern"""
+        """Get final feedback based on collected errors"""
         feedback_messages = []
 
         for error_msg, count in self.error_counts.items():
-            if count > 20:  # Nur häufige Fehler erwähnen
+            if count > 20:  # Only mention frequent errors
                 if count > 60:
-                    feedback_messages.append(f"🔴 Häufiger Fehler: {error_msg} ({count}x)")
+                    feedback_messages.append(f"🔴 Frequent error: {error_msg} ({count}x)")
                 elif count > 40:
-                    feedback_messages.append(f"🟡 Gelegentlicher Fehler: {error_msg} ({count}x)")
+                    feedback_messages.append(f"🟡 Occasional error: {error_msg} ({count}x)")
 
         if not feedback_messages:
-            feedback_messages.append("✅ Gute Form! Keine größeren Probleme erkannt.")
+            feedback_messages.append("✅ Good form! No major issues detected.")
 
         return feedback_messages
 
     def reset_errors(self):
-        """Reset gesammelte Fehler"""
+        """Reset collected errors"""
         self.collected_errors = []
         self.error_counts = {}
 
     def _evaluate_condition(self, condition: Dict, angles: Dict, positions: Dict) -> bool:
-        """Evaluate a single error condition - weniger streng"""
+        """Evaluate a single error condition - less strict"""
         try:
             condition_type = condition.get('type')
 
@@ -150,7 +150,7 @@ class ErrorChecker:
                 max_val = condition.get('max', 180)
                 current_angle = angles.get(angle_name, 90)
 
-                # Mache Grenzen weniger streng (±10° Toleranz)
+                # Make bounds less strict (±10° tolerance)
                 tolerant_min = min_val - 10
                 tolerant_max = max_val + 10
 
@@ -165,7 +165,7 @@ class ErrorChecker:
 
                 current_pos = positions.get(pos_name, {}).get(axis, 0.5)
 
-                # Mache Schwellenwerte weniger streng (±0.05 Toleranz)
+                # Make thresholds less strict (±0.05 tolerance)
                 tolerance = 0.05
 
                 if operator == '>':

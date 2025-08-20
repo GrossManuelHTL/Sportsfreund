@@ -1,9 +1,0 @@
-argparse
-numpy
-ipykernel
-ipython
-mediapipe
-opencv-python
-scikit-learn
-tensorflow
-gtts

@@ -64,7 +64,6 @@ class StateMachine:
         if potential_new_state and potential_new_state != self.current_state:
             self.state_confidence += 1
 
-
             # Only transition if we're confident (multiple consecutive frames)
             if self.state_confidence >= self.min_confidence_for_transition:
                 # Also check minimum duration in current state
@@ -91,7 +90,7 @@ class StateMachine:
         return None
 
     def _evaluate_state_conditions(self, conditions: Dict[str, Any], angles: Dict, positions: Dict) -> bool:
-        """Generisch: prüfe alle Bedingungen (min/max Winkel, Positionen)"""
+        """Generic: check all conditions (min/max angles, positions)"""
         try:
             for key, val in conditions.items():
                 if key.endswith('angle'):
