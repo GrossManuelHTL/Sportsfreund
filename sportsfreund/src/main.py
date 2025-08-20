@@ -79,7 +79,7 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
     # Create overlay with semi-transparent background
     overlay = frame.copy()
 
-    # Status panel background (erweitert für mehr Info)
+    # Status panel background (extended for more info)
     panel_width = int(450 * font_scale_base)
     panel_height = int(280 * font_scale_base)
     cv2.rectangle(overlay, (10, 10), (10 + panel_width, 10 + panel_height), (0, 0, 0), -1)
@@ -137,7 +137,7 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
             cv2.putText(frame, f"History: {history_text}", (20, int(260 * font_scale_base)),
                         cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (200, 200, 200), thickness_small)
 
-        # Hip position indicator (rechts)
+        # Hip position indicator (right side)
         hip_y = positions.get('hip_center', {}).get('y', 0.5)
         indicator_y = int(height * 0.8)
         indicator_x = int(width * 0.9)
@@ -156,7 +156,7 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
         cv2.putText(frame, "Hip", (indicator_x - int(35 * font_scale_base), indicator_y + int(70 * font_scale_base)),
                     cv2.FONT_HERSHEY_SIMPLEX, font_scale_small, (255, 255, 255), thickness_small)
 
-        # Knee angle indicator (links von Hip)
+        # Knee angle indicator (left of Hip)
         knee_indicator_x = int(width * 0.85)
         knee_bar_height = int(100 * font_scale_base)
         knee_bar_top = indicator_y - indicator_size
@@ -348,7 +348,7 @@ def analyze_video(video_path: str, exercise_name: str):
     print(f"📦 Total Frames Processed: {frame_count}")
     print(f"⏱️ Processing Rate: {frame_count/total_frames*100:.1f}% of frames")
 
-    # Zeige finales Feedback basierend auf gesammelten Fehlern
+    # Show final feedback based on collected errors
     print("\n" + "=" * 50)
     print("📋 FORM FEEDBACK SUMMARY")
     if manager.error_checker:

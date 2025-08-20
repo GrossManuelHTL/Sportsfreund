@@ -1,0 +1,38 @@
+{
+  "exercise_name": "pushup",
+  "display_name_de": "Liegestütze",
+  "welcome_text_de": "Zeit für Liegestütze! Der Klassiker für einen starken Oberkörper.",
+  "description_de": "Liegestütze sind die perfekte Übung für Brust, Schultern, Arme und Rumpf. Sie trainieren den gesamten Oberkörper und verbessern die Körperstabilität.",
+  "instructions_de": "Gehen Sie in die Stützposition, Hände unter den Schultern. Senken Sie den Körper kontrolliert ab, bis die Brust fast den Boden berührt. Drücken Sie sich kraftvoll wieder nach oben.",
+  "preparation_de": "Bereiten Sie sich auf die Liegestütze vor. Gehen Sie in die Stützposition und spannen Sie den ganzen Körper an.",
+  "form_cues_de": [
+    "Körper in gerader Linie",
+    "Rumpf anspannen",
+    "Kontrollierte Bewegung",
+    "Vollständige Bewegungsamplitude"
+  ],
+  "motivation_de": [
+    "Großartig! Weiter so!",
+    "Perfekte Form!",
+    "Sie sind stark!",
+    "Noch ein paar mehr!",
+    "Ausgezeichnete Technik!",
+    "Bleiben Sie dran!"
+  ],
+  "corrections_de": {
+    "body_line": "Halten Sie den Körper in einer geraden Linie",
+    "elbow_position": "Ellbogen näher zum Körper führen",
+    "range_of_motion": "Gehen Sie tiefer nach unten",
+    "core_stability": "Spannen Sie den Rumpf mehr an",
+    "hand_position": "Positionieren Sie die Hände direkt unter den Schultern"
+  },
+  "completion_de": {
+    "set_finished": "Liegestütz-Set geschafft! Ausgezeichnet!",
+    "session_finished": "Fantastisch! Alle Liegestütz-Sets erfolgreich absolviert!",
+    "rep_completed": "Perfekte Wiederholung!",
+    "halfway_motivation": "Halbzeit erreicht! Sie schaffen das!"
+  },
+  "synonyms_de": ["liegestütz", "push-up", "pushup", "liegestütze"],
+  "keywords_de": ["brust", "arme", "schultern", "rumpf", "pushup", "liegestütz"]
+}
+

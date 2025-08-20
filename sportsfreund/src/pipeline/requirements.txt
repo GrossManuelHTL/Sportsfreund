@@ -1,0 +1,26 @@
+# Pipeline-spezifische Requirements
+# Audio System
+TTS==0.22.0  # Coqui TTS für deutsche Sprachausgabe
+pygame==2.5.2  # Audio-Wiedergabe
+SpeechRecognition==3.10.0  # Spracheingabe
+pyaudio==0.2.11  # Mikrofon-Support
+
+# Computer Vision (falls nicht bereits installiert)
+opencv-python==4.8.1.78
+mediapipe==0.10.7
+
+# HTTP Requests
+requests==2.31.0
+
+# Datenverarbeitung
+numpy==1.24.3
+pandas==2.0.3
+
+# JSON/Serialization
+dataclasses-json==0.6.1
+
+# Development Tools
+pytest==7.4.2
+pytest-cov==4.1.0
+black==23.7.0
+flake8==6.0.0

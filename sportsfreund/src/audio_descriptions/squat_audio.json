@@ -1,0 +1,38 @@
+{
+  "exercise_name": "squat",
+  "display_name_de": "Kniebeugen",
+  "welcome_text_de": "Willkommen zu den Kniebeugen! Eine der wichtigsten Grundübungen für starke Beine und einen kräftigen Po.",
+  "description_de": "Kniebeugen trainieren den gesamten Unterkörper. Sie stärken Oberschenkel, Gesäßmuskeln und den Rumpf. Eine perfekte Übung für Kraft und Stabilität.",
+  "instructions_de": "Stellen Sie sich aufrecht hin, Füße schulterbreit auseinander. Senken Sie sich kontrolliert ab, als würden Sie sich auf einen unsichtbaren Stuhl setzen. Halten Sie den Rücken gerade und drücken Sie sich kraftvoll wieder nach oben.",
+  "preparation_de": "Machen Sie sich bereit für die Kniebeugen. Stellen Sie sich bequem hin und achten Sie auf eine stabile Position.",
+  "form_cues_de": [
+    "Halten Sie die Brust aufrecht",
+    "Knie über den Zehen",
+    "Gewicht auf den Fersen",
+    "Kontrollierte Bewegung"
+  ],
+  "motivation_de": [
+    "Sehr gut! Weiter so!",
+    "Perfekte Ausführung!",
+    "Sie schaffen das!",
+    "Noch ein paar Wiederholungen!",
+    "Großartige Form!",
+    "Weiter kämpfen!"
+  ],
+  "corrections_de": {
+    "knee_tracking": "Achten Sie darauf, dass die Knie über den Zehen bleiben",
+    "depth": "Versuchen Sie, etwas tiefer zu gehen",
+    "back_straight": "Halten Sie den Rücken gerade",
+    "weight_distribution": "Verlagern Sie das Gewicht auf die Fersen",
+    "speed": "Bewegen Sie sich etwas langsamer und kontrollierter"
+  },
+  "completion_de": {
+    "set_finished": "Set abgeschlossen! Sehr gute Arbeit!",
+    "session_finished": "Glückwunsch! Sie haben alle Kniebeugen-Sets erfolgreich absolviert!",
+    "rep_completed": "Wiederholung geschafft!",
+    "halfway_motivation": "Sie sind auf halbem Weg! Weiter so!"
+  },
+  "synonyms_de": ["kniebeuge", "hocke", "squat", "kniebeugen"],
+  "keywords_de": ["beine", "po", "gesäß", "oberschenkel", "squat", "kniebeuge"]
+}
+
