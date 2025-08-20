@@ -37,8 +37,6 @@ class AudioDescriptionManager:
         self.descriptions_dir.mkdir(exist_ok=True)
         print("📝 Creating default audio descriptions as JSON files...")
 
-        # JSON files are created separately
-        # Here we only reload them
         self._load_descriptions()
 
     def get_available_exercises(self) -> List[str]:
@@ -99,17 +97,12 @@ class AudioDescriptionManager:
         keywords_lower = [k.lower() for k in keywords]
 
         for exercise_name, desc_data in self.descriptions.items():
-            # Check names
             if any(keyword in exercise_name for keyword in keywords_lower):
                 return exercise_name
-
-            # Check synonyms
             synonyms = desc_data.get('synonyms_de', [])
             for synonym in synonyms:
                 if any(keyword in synonym.lower() for keyword in keywords_lower):
                     return exercise_name
-
-            # Check keywords
             exercise_keywords = desc_data.get('keywords_de', [])
             for ex_keyword in exercise_keywords:
                 if any(keyword in ex_keyword.lower() for keyword in keywords_lower):

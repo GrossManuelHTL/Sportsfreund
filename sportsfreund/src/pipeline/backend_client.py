@@ -33,10 +33,8 @@ class BackendClient:
             bool: True if successfully sent
         """
         try:
-            # Serialize timestamps for JSON
             processed_data = self._serialize_timestamps(session_data)
 
-            # POST request to backend
             response = requests.post(
                 f"{self.base_url}/api/sessions",
                 headers=self.headers,
@@ -45,20 +43,20 @@ class BackendClient:
             )
 
             if response.status_code == 200 or response.status_code == 201:
-                print(f"✅ Session data successfully sent to backend")
+                print(f"Session data successfully sent to backend")
                 return True
             else:
-                print(f"❌ Backend error: {response.status_code} - {response.text}")
+                print(f"Backend error: {response.status_code} - {response.text}")
                 return False
 
         except requests.exceptions.ConnectionError:
-            print("❌ Connection to backend failed")
+            print("Connection to backend failed")
             return False
         except requests.exceptions.Timeout:
-            print("❌ Backend request timeout")
+            print("Backend request timeout")
             return False
         except Exception as e:
-            print(f"❌ Unexpected error during backend upload: {e}")
+            print(f"Unexpected error during backend upload: {e}")
             return False
 
     def _serialize_timestamps(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -109,20 +107,18 @@ class BackendClient:
                 session_id = session_data.get('session', {}).get('session_id', 'unknown')[:8]
                 filename = f"session_{session_id}_{timestamp}.json"
 
-            # Create local sessions directory
             from pathlib import Path
             sessions_dir = Path("sessions")
             sessions_dir.mkdir(exist_ok=True)
 
-            # Serialize and save data
             processed_data = self._serialize_timestamps(session_data)
 
             with open(sessions_dir / filename, 'w', encoding='utf-8') as f:
                 json.dump(processed_data, f, indent=2, ensure_ascii=False)
 
-            print(f"💾 Session saved locally: {filename}")
+            print(f"Session saved locally: {filename}")
             return True
 
         except Exception as e:
-            print(f"❌ Error saving locally: {e}")
+            print(f"Error saving locally: {e}")
             return False

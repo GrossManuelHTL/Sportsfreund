@@ -449,9 +449,9 @@ def main():
     try:
         pipeline.start_pipeline()
     except KeyboardInterrupt:
-        print("\n⏹️ Pipeline terminated by user")
+        print("\n⏹Pipeline terminated by user")
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
+        print(f"\nUnexpected error: {e}")
     finally:
         pipeline._cleanup()
 

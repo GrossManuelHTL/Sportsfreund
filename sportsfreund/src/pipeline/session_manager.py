@@ -70,7 +70,7 @@ class SessionManager:
             start_time=datetime.now()
         )
 
-        print(f"🎯 Session started: {exercise_name} - {target_sets} sets of {target_reps_per_set} reps")
+        print(f"Session started: {exercise_name} - {target_sets} sets of {target_reps_per_set} reps")
 
         if self.audio_system:
             self.audio_system.speak(
@@ -153,16 +153,13 @@ class SessionManager:
         if not self.current_set or not self.current_session:
             return {}
 
-        # Finish set
         self.current_set.end_time = datetime.now()
         self.current_set.duration_seconds = (
             self.current_set.end_time - self.current_set.start_time
         ).total_seconds()
 
-        # Add set to session
         self.current_session.sets.append(self.current_set)
 
-        # Compile feedback
         set_summary = {
             "set_number": self.current_set.set_number,
             "completed_reps": self.current_set.completed_reps,
@@ -176,11 +173,9 @@ class SessionManager:
               f"{self.current_set.completed_reps}/{self.current_set.target_reps} reps, "
               f"Form: {self.current_set.form_score:.1%}")
 
-        # Audio feedback
         if self.audio_system:
             self._speak_set_feedback(set_summary)
 
-        # Reset current set
         current_set_data = self.current_set
         self.current_set = None
 
@@ -195,11 +190,9 @@ class SessionManager:
         target_reps = set_summary["target_reps"]
         form_score = set_summary["form_score"]
 
-        # Basic feedback
         feedback_text = f"Set {set_summary['set_number']} completed. "
         feedback_text += f"{reps_completed} of {target_reps} repetitions. "
 
-        # Form evaluation
         if form_score >= 0.8:
             feedback_text += "Excellent form! "
         elif form_score >= 0.6:
@@ -209,7 +202,6 @@ class SessionManager:
         else:
             feedback_text += "Focus more on correct form. "
 
-        # Specific feedback from collected items
         feedback_items = self.current_session.sets[-1].feedback_items if self.current_session.sets else []
         warning_count = len([f for f in feedback_items if f["severity"] == "warning"])
         error_count = len([f for f in feedback_items if f["severity"] == "error"])
@@ -236,7 +228,6 @@ class SessionManager:
             self.current_session.end_time - self.current_session.start_time
         ).total_seconds()
 
-        # Calculate overall score
         if self.current_session.sets:
             total_score = sum(s.form_score for s in self.current_session.sets)
             self.current_session.overall_form_score = total_score / len(self.current_session.sets)
@@ -244,7 +235,6 @@ class SessionManager:
         print(f"🏁 Session completed: {len(self.current_session.sets)} sets, "
               f"Overall score: {self.current_session.overall_form_score:.1%}")
 
-        # Final audio feedback
         if self.audio_system:
             self._speak_session_summary()
 
