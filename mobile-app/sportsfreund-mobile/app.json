@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "reactNativeApp",
-    "slug": "reactNativeApp",
+    "name": "sportsfreund-mobile",
+    "slug": "sportsfreund-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,32 +13,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.obinobu.reactNativeApp",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.obinobu.reactNativeApp"
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "2bd42e47-3401-480f-9867-5142fc4081ec"
-      }
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/2bd42e47-3401-480f-9867-5142fc4081ec"
     }
   }
 }
