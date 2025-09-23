@@ -7,6 +7,7 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 /sportsfreund/new_processor/temp.mp3
+.idea
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
@@ -259,9 +260,6 @@ dmypy.json
 cython_debug/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python
-.idea/uni-wien-fun.iml
-.idea/misc.xml
-.idea/uni-wien-fun.iml
 raspyfit/processor/src/output_recorded.mp4
 raspyfit/processor/src/utils/__init__.py
 raspyfit/processor/src/output_recorded.mp4
