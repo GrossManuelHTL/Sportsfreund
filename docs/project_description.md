@@ -25,37 +25,27 @@ Sportsfreund is an inclusive, multi-platform fitness companion designed for ever
 
 ## Accessibility & Inclusion
 
-- Designed for sighted users and users with visual impairments: multimodal feedback (audio, haptics, visuals).
-- Configurable interaction modes: voice-first, touch-first, or hybrid.
-- Localization and cultural sensitivity in language, measurements, and content.
-- Privacy and consent: clear data controls, opt-in analytics, and GDPR-compliant data handling.
+- Designed for sighted users and users with visual impairments: multimodal feedback (audio, and visuals).
 
 ## Technical Overview
 
 - Frontend: React (web) and React Native or Flutter (mobile) for shared UI and consistent experiences.
 - Backend: Django backend
-- Notifications: push notifications for mobile, web push for browsers, and email fallback.
+- Notifications: push notifications for mobile, web push for browsers, and email fallback.1
 - Offline-first basics: local caching for workouts and progress, sync when online.
 - Integrations: calendar, health platforms (optional), social sharing (opt-in).
 
-## Security & Privacy
-
-- Minimize collected data; store only what is necessary for functionality.
-- Encrypt PII at rest and in transit.
-- Provide account deletion, data export, and privacy settings in-app.
-
 ## Success Metrics
 
-- Daily active users (DAU) and retention rates.
+- Daily active users and retention rates.
 - Average streak length and percentage of users achieving multi-week streaks.
 - Accessibility compliance score and feedback from users with disabilities.
-- Net promoter score (NPS) and feature adoption rates.
 
 ## Roadmap (high level)
 
 1. Core cross-platform app with accessible UI and core workout library.
 2. Scheduling, reminders, and basic gamification (streaks, badges).
 3. Advanced personalization, social features (opt-in), and integrations.
-4. Analytics, continuous accessibility improvements, and localization.
+4. Analytics and continuous accessibility improvements
 
 Sportsfreund aims to make fitness engaging and reachable for everyone by combining inclusive design with motivating gamification.
