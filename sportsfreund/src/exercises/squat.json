@@ -23,50 +23,59 @@
 
   "error_checks": [
     {
+      "name": "left_knee_too_deep",
       "condition": {
-        "type": "angle_range",
-        "angle": "left_knee",
-        "min": 30,
-        "max": 50
+        "type": "angle_threshold",
+        "joint": "left_knee",
+        "operator": "<",
+        "threshold": 50
       },
       "message": "Knie zu tief gebeugt - Verletzungsgefahr!",
-      "type": "safety",
-      "priority": 5
+      "type": "warning",
+      "priority": 5,
+      "check_in_states": ["descending", "bottom", "ascending"]
     },
     {
+      "name": "right_knee_too_deep",
       "condition": {
-        "type": "angle_range",
-        "angle": "right_knee",
-        "min": 30,
-        "max": 50
+        "type": "angle_threshold",
+        "joint": "right_knee",
+        "operator": "<",
+        "threshold": 50
       },
       "message": "Knie zu tief gebeugt - Verletzungsgefahr!",
-      "type": "safety",
-      "priority": 5
+      "type": "warning",
+      "priority": 5,
+      "check_in_states": ["descending", "bottom", "ascending"]
     },
     {
+      "name": "left_knee_not_deep_enough",
       "condition": {
-        "type": "angle_range",
-        "angle": "left_knee",
-        "min": 120,
-        "max": 140
+        "type": "angle_threshold",
+        "joint": "left_knee",
+        "operator": ">",
+        "threshold": 120
       },
       "message": "Knie nicht tief genug - gehe weiter runter",
       "type": "warning",
-      "priority": 2
+      "priority": 2,
+      "check_in_states": ["bottom"]
     },
     {
+      "name": "back_too_forward",
       "condition": {
-        "type": "angle_range",
-        "angle": "back",
-        "min": 160,
-        "max": 180
+        "type": "angle_threshold",
+        "joint": "back",
+        "operator": "<",
+        "threshold": 160
       },
       "message": "Rücken zu weit nach vorne gebeugt",
       "type": "error",
-      "priority": 3
+      "priority": 3,
+      "check_in_states": ["descending", "bottom", "ascending"]
     },
     {
+      "name": "hip_not_low_enough",
       "condition": {
         "type": "position_threshold",
         "position": "hip_center",
@@ -76,7 +85,8 @@
       },
       "message": "Hüfte nicht tief genug",
       "type": "warning",
-      "priority": 2
+      "priority": 2,
+      "check_in_states": ["bottom"]
     }
   ]
 }

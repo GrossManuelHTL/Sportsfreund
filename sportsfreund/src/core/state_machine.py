@@ -96,7 +96,6 @@ class StateMachine:
                 if key.endswith('angle'):
                     joint = key.replace('min_', '').replace('max_', '').replace('_angle', '')
                     angle = angles.get(joint, 1000)
-                    print("Current angle for", joint, "is", angle)
                     if angle is not 1000: # we'll find something smarter later...
                         if key.startswith('min_') and angle < val:
                             return False
@@ -123,8 +122,6 @@ class StateMachine:
             'frame': self.frame_time,
             'duration': self.frames_in_current_state
         })
-
-        print(f"State transition: {self.current_state} -> {new_state} (frame {self.frame_time})")
 
         self.current_state = new_state
         self.frames_in_current_state = 0

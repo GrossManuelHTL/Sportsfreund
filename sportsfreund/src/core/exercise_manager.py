@@ -24,6 +24,8 @@ class ExerciseManager:
         self.state_machine = None
         self.error_checker = None
         self.exercise_configs = {}
+        # track last rep count to detect rep completion events
+        self.last_rep_count = 0
 
         self._load_exercise_configs()
 
@@ -52,12 +54,12 @@ class ExerciseManager:
         self.current_exercise = exercise_name
         config = self.exercise_configs[exercise_name]
 
-        # Initialize state machine
         self.state_machine = StateMachine(config)
 
-        # Initialize error checker
         self.error_checker = ErrorChecker(config)
         self.error_checker.set_feedback_handler(self.feedback_handler)
+
+        self.last_rep_count = 0
 
         print(f"Exercise set to: {exercise_name}")
         return True
@@ -67,30 +69,31 @@ class ExerciseManager:
         if not self.current_exercise or not self.state_machine:
             return {"error": "No exercise selected"}
 
-        # Extract pose data
         pose_data = self.pose_extractor.extract_pose_data(frame)
 
         if not pose_data:
             return {"error": "No pose detected"}
 
-        # Update state machine
         state_status = self.state_machine.update(pose_data)
 
-        # Check for errors
-        errors = self.error_checker.check_errors(pose_data)
+        new_feedback_items = []
+        if self.error_checker:
+            new_feedback_items = self.error_checker.process_frame(pose_data, state=state_status.get('current_state'))
 
-        # Add errors to feedback system
-        for error in errors:
-            self.feedback_handler.add_feedback(
-                error.message,
-                error.type,
-                immediate=(error.type.value == "safety")
-            )
+        current_reps = state_status.get('rep_count', 0)
+        if current_reps > self.last_rep_count:
+            try:
+                self.error_checker.on_rep_end()
+            except Exception:
+                pass
+            self.last_rep_count = current_reps
+
+        errors = [{"message": item.message, "type": item.type.value} for item in new_feedback_items]
 
         return {
             "pose_data": pose_data,
             "state_status": state_status,
-            "errors": [{"message": e.message, "type": e.type.value} for e in errors],
+            "errors": errors,
             "exercise": self.current_exercise
         }
 

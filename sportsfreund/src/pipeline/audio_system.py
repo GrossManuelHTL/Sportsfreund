@@ -1,51 +1,55 @@
 import threading
 import tempfile
 import os
-import sounddevice as sd
-import soundfile as sf
-from TTS.api import TTS
+from gtts import gTTS
+from playsound import playsound
+
 
 class AudioSystem:
-    def __init__(self, model_name: str = "tts_models/de/thorsten/vits"):
-        """
-        Loads a German TTS model (offline).
-        """
-        self.tts = TTS(model_name)
+    """Simple TTS using Google (gTTS) for German language output.
+
+    This replaces the previous Coqui TTS implementation with gTTS (Google-backed).
+    Note: gTTS requires internet access.
+    """
+
+    def __init__(self, lang: str = "de"):
+        self.lang = lang
 
     def listen_for_command(self, timeout: int = 5) -> str:
-        """
-        Listens for a voice command and returns the recognized text.
-        This is a placeholder method and should be implemented with actual voice recognition logic.
-        """
-
-        return "This is a placeholder for voice command recognition."
+        """Placeholder for voice command recognition."""
+        return ""
 
     def speak(self, text: str, async_play: bool = False) -> bool:
+        """Speak text using gTTS and playsound.
+
+        :param text: Text to speak (German)
+        :param async_play: If True, play in background thread
         """
-        Speaks the given text.
-        :param text: German text (no IPA).
-        :param async_play: If True, playback runs in a thread.
-        """
+        if not text:
+            return False
+
+        def _play(tmp_mp3: str):
+            try:
+                playsound(tmp_mp3)
+            except Exception:
+                pass
+            try:
+                os.remove(tmp_mp3)
+            except Exception:
+                pass
+
         try:
-            def _play():
-                # Generate own temp filename
-                tmp_path = tempfile.mktemp(suffix=".wav")
+            # create temporary mp3 file
+            fd, tmp_path = tempfile.mkstemp(suffix=".mp3")
+            os.close(fd)
 
-                # Generate speech
-                self.tts.tts_to_file(text=text, file_path=tmp_path)
-
-                # Load and play
-                data, samplerate = sf.read(tmp_path)
-                sd.play(data, samplerate)
-                sd.wait()
-
-                # Delete file afterwards
-                os.remove(tmp_path)
+            tts = gTTS(text=text, lang=self.lang)
+            tts.save(tmp_path)
 
             if async_play:
-                threading.Thread(target=_play, daemon=True).start()
+                threading.Thread(target=_play, args=(tmp_path,), daemon=True).start()
             else:
-                _play()
+                _play(tmp_path)
 
             return True
         except Exception as e:

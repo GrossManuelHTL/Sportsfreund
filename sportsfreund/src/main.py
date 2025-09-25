@@ -13,10 +13,14 @@ sys.path.append(str(Path(__file__).parent))
 
 from core.exercise_manager import ExerciseManager
 from core.feedback_system import FeedbackType
+from pipeline.session_manager import SessionManager
+from pipeline.audio_system import AudioSystem
+import json
+from datetime import datetime
+from pathlib import Path
 
 
 def print_feedback(message: str):
-    """Callback for text feedback"""
     print(f"💬 FEEDBACK: {message}")
 
 
@@ -35,17 +39,17 @@ def print_custom_feedback(feedback_item):
 def resize_frame_for_display(frame, max_width=800, max_height=600):
     """Resize frame to fit within fixed window size while maintaining aspect ratio"""
     height, width = frame.shape[:2]
-    
+
     # Calculate scaling factor
     scale_width = max_width / width
     scale_height = max_height / height
     scale = min(scale_width, scale_height, 1.0)  # Don't upscale
-    
+
     if scale < 1.0:
         new_width = int(width * scale)
         new_height = int(height * scale)
         frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-    
+
     return frame
 
 
@@ -211,16 +215,34 @@ def draw_enhanced_overlay(frame, pose_data, status, errors):
     return frame
 
 
-def analyze_video(video_path: str, exercise_name: str):
+def analyze_video(video_path: str, exercise_name: str, target_reps_per_set: int = 10, target_sets: int = 1):
     """Analyze a video file for exercise recognition with enhanced visualization"""
 
     # Initialize exercise manager
     manager = ExerciseManager(config_dir="exercises")
 
-    # Set up feedback callbacks
+    # Initialize audio and session manager for interactive feedback
+    audio_system = AudioSystem()
+    session_manager = SessionManager(audio_system=audio_system)
+
+    # adapter for custom callback: FeedbackItem -> SessionManager.add_feedback
+    def session_feedback_adapter(feedback_item):
+        # feedback_item has .type (FeedbackType), .message
+        try:
+            severity = feedback_item.type.value
+            session_manager.add_feedback(feedback_item.type.value, feedback_item.message, severity=severity)
+        except Exception:
+            pass
+
+    # Start session and the first set with given targets
+    session_id = session_manager.start_session(exercise_name, target_sets, target_reps_per_set)
+    session_manager.start_set(1)
+
+    # Set up feedback callbacks (text and audio)
     manager.set_feedback_callbacks(
         text_callback=print_feedback,
-        custom_callback=print_custom_feedback
+        audio_callback=audio_system.speak,
+        custom_callback=session_feedback_adapter
     )
 
     # Load exercise
@@ -250,6 +272,8 @@ def analyze_video(video_path: str, exercise_name: str):
     frame_count = 0
     last_rep_count = 0
     paused = False
+    reps_in_set = 0
+    current_set_number = 1
 
     # Create window
     cv2.namedWindow('Exercise Analysis')
@@ -279,12 +303,43 @@ def analyze_video(video_path: str, exercise_name: str):
                 if status["reps"] > last_rep_count:
                     print(f"🎉 REP COMPLETED! Total reps: {status['reps']}")
                     last_rep_count = status["reps"]
+                    # update session manager rep counters
+                    reps_in_set += 1
+                    session_manager.update_rep_count(reps_in_set)
+
+                    # If set target reached, finish set and aggregate feedback
+                    if reps_in_set >= target_reps_per_set:
+                        # Finish current set and speak aggregated feedback
+                        set_summary = session_manager.finish_set()
+                        try:
+                            set_feedback = manager.error_checker.on_set_end()
+                        except Exception:
+                            set_feedback = None
+
+                        # Speak aggregated feedback_texts from error checker (if any)
+                        if set_feedback and isinstance(set_feedback, dict):
+                            for text in set_feedback.get('feedback_texts', []):
+                                audio_system.speak(text, async_play=True)
+
+                        # Deliver any pending feedback (TTS etc.)
+                        manager.feedback_handler.deliver_pending_feedback()
+                        print(f"Set finished summary: {set_summary}")
+
+                        # Prepare next set if there are more
+                        current_set_number += 1
+                        reps_in_set = 0
+                        if current_set_number <= target_sets:
+                            session_manager.start_set(current_set_number)
+                        else:
+                            # finish session early if reached planned sets
+                            break
 
                 pose_data = result.get("pose_data")
+                errors = result.get("errors", [])
                 if pose_data:
                     frame = manager.pose_extractor.draw_pose(frame, pose_data)
 
-                frame = draw_enhanced_overlay(frame, pose_data, status, [])
+                frame = draw_enhanced_overlay(frame, pose_data, status, errors)
 
                 if frame_count % 60 == 0:
                     print(f"\n📊 Frame {frame_count}/{total_frames} | State: {status['state']} | Reps: {status['reps']}")
@@ -358,6 +413,27 @@ def analyze_video(video_path: str, exercise_name: str):
 
     print("=" * 50)
 
+    # Finish session and save locally (no backend upload)
+    try:
+        # prepare payload before finishing session
+        payload = session_manager.get_session_data_for_backend()
+        session_obj = session_manager.finish_session()
+
+        # save payload locally
+        try:
+            sessions_dir = Path("sessions")
+            sessions_dir.mkdir(exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            sid = payload.get('session', {}).get('session_id', 'unknown')[:8]
+            filename = f"session_{sid}_{timestamp}.json"
+            with open(sessions_dir / filename, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            print(f"Session saved locally: {filename}")
+        except Exception as e:
+            print(f"Could not save session locally: {e}")
+    except Exception:
+        pass
+
     # Deliver any pending feedback
     manager.feedback_handler.deliver_pending_feedback()
 
@@ -428,7 +504,10 @@ def main():
     if len(sys.argv) >= 3:
         video_path = sys.argv[1]
         exercise_name = sys.argv[2]
-        analyze_video(video_path, exercise_name)
+        # optional args: reps_per_set, sets
+        reps = int(sys.argv[3]) if len(sys.argv) >= 4 else 10
+        sets = int(sys.argv[4]) if len(sys.argv) >= 5 else 1
+        analyze_video(video_path, exercise_name, target_reps_per_set=reps, target_sets=sets)
     else:
         # Run in interactive mode
         interactive_mode()
