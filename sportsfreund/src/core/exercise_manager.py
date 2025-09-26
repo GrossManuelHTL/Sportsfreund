@@ -8,7 +8,8 @@ from typing import Dict, Any, Optional, Callable, List
 from pathlib import Path
 
 from .state_machine import StateMachine
-from .feedback_system import FeedbackHandler, ErrorChecker, FeedbackType
+from feedback.handler import FeedbackHandler
+from feedback.errorchecker import ErrorChecker
 from .pose_extractor import PoseExtractor
 
 
