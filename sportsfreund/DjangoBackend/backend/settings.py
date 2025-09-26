@@ -76,8 +76,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'SportsfreundDB',
-        'USER': 'oaschwald',
-        'PASSWORD': 'Hekjegyok9',
+        'USER': 'spdb',
+        'PASSWORD': '1234',
         'HOST': 'localhost',
         'PORT': '5432',
     }
