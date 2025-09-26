@@ -2,9 +2,7 @@
 State Machine System for Exercise Recognition
 Handles state transitions and rep counting based on pose data
 """
-from typing import Dict, List, Any, Optional
-from enum import Enum
-import json
+from typing import Dict, Any, Optional
 
 
 class ExerciseState:

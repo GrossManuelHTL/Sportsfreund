@@ -5,14 +5,13 @@ Tests the modular workflow with video analysis
 import cv2
 import os
 import sys
-import numpy as np
 from pathlib import Path
 
 # Add src directory to path for imports
 sys.path.append(str(Path(__file__).parent))
 
 from core.exercise_manager import ExerciseManager
-from core.feedback_system import FeedbackType
+from models.feedback import FeedbackType
 from pipeline.session_manager import SessionManager
 from pipeline.audio_system import AudioSystem
 import json
