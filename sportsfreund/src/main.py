@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from core.exercise_manager import ExerciseManager
-from core.feedback_system import FeedbackType
+from models.feedback import FeedbackType
 from pipeline.session_manager import SessionManager
 from pipeline.audio_system import AudioSystem
 import json
