@@ -1,4 +1,4 @@
-# Rapsyfit (bzw hoit der neiche name)
+# Rapsyfit/Sportsfreund
 
 ## Projektbeschreibung
 Das Ziel dieses Projekts ist die Entwicklung einer interaktiven KI-Box, die speziell für sehbehinderte Menschen konzipiert ist. Die Box wird auf einem Raspberry Pi (Raspy) betrieben, in einem Gehäuse untergebracht und mit einer Kamera sowie Audioeingabe- und Ausgabemöglichkeiten ausgestattet. Sie ermöglicht eine barrierefreie, auditive Interaktion, unterstützt durch KI-gestützte Funktionen.
