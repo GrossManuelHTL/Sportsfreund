@@ -224,26 +224,20 @@ class ErrorChecker:
         total_reps = len(self.reps)
         messages = []
         for cid, count in error_counts.items():
-            # find check definition
             check = next((c for c in self.checks if c['id'] == cid), None)
             msg = check.get('message') if check else cid
             aggregated[cid] = {'count': count, 'message': msg}
-            # include in spoken feedback if occurs in >=30% reps or at least 2 reps
             if count >= max(2, int(0.3 * total_reps)):
                 messages.append(f"Bei {count}/{total_reps} Wiederholungen: {msg}")
-
         if not messages:
-            messages.append("✅ Gute Form! Keine häufigen Fehler erkannt.")
-
+            messages.append("Gute Form! Keine häufigen Fehler erkannt.")
         summary = {
             'reps': list(self.reps),
             'aggregated_errors': aggregated,
             'feedback_texts': messages,
             'timestamp': time.time()
         }
-
         self.sets.append(summary)
-        # reset reps for next set
         self.reps = []
         return summary
 
@@ -257,34 +251,22 @@ class ErrorChecker:
         }
 
     def get_final_feedback(self) -> List[str]:
-        """Produce concise final feedback messages based on accumulated error counts.
-
-        Returns a list of German feedback strings suitable for display or TTS.
-        """
         messages: List[str] = []
-
         if not self.error_counts_total:
-            return ["✅ Gute Form! Keine großen Probleme erkannt."]
-
+            return ["Gute Form! Keine großen Probleme erkannt."]
         for cid, count in sorted(self.error_counts_total.items(), key=lambda x: x[1], reverse=True):
-            # find check definition
             check = next((c for c in self.checks if c['id'] == cid), None)
             msg = check.get('message') if check else cid
-
-            # simple thresholds for verbosity
             if count > 60:
-                messages.append(f"🔴 Häufig: {msg} ({count}x)")
+                messages.append(f"Häufig: {msg} ({count}x)")
             elif count > 40:
-                messages.append(f"🟡 Gelegentlich: {msg} ({count}x)")
+                messages.append(f"Gelegentlich: {msg} ({count}x)")
             elif count > 10:
-                messages.append(f"🔵 Selten: {msg} ({count}x)")
+                messages.append(f"Selten: {msg} ({count}x)")
             else:
-                # very rare issues - include only if no other messages
-                messages.append(f"ℹ️ {msg} ({count}x)")
-
+                messages.append(f"{msg} ({count}x)")
         if not messages:
-            messages.append("✅ Gute Form! Keine großen Probleme erkannt.")
-
+            messages.append("Gute Form! Keine großen Probleme erkannt.")
         return messages
 
     def reset_all(self):
