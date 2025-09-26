@@ -7,10 +7,10 @@ import os
 from typing import Dict, Any, Optional, Callable, List
 from pathlib import Path
 
-from .state_machine import StateMachine
-from feedback.handler import FeedbackHandler
-from feedback.errorchecker import ErrorChecker
-from .pose_extractor import PoseExtractor
+from core.state_machine import StateMachine
+from core.feedback.handler import FeedbackHandler
+from core.feedback.errorchecker import ErrorChecker
+from core.pose_extractor import PoseExtractor
 
 
 class ExerciseManager:
