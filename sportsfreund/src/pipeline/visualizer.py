@@ -24,7 +24,20 @@ class Visualizer:
             cv2.putText(frame, f"{state} | Reps: {reps} | F:{frame_idx}", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-        
+        # errors top-right
+        if errors:
+            y = 60
+            for e in errors[:5]:
+                msg = e.get('message') if isinstance(e, dict) else str(e)
+                cv2.putText(frame, f"⚠ {msg}", (w - 430, y),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 200), 1)
+                y += 18
+
+        # paused indicator
+        if paused:
+            cv2.putText(frame, "PAUSED - Press SPACE to continue", (10, h - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
         cv2.imshow(self.WINDOW_NAME, frame)
 
     def handle_keys(self):
