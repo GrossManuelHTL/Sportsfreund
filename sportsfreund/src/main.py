@@ -5,7 +5,6 @@ Tests the modular workflow with video analysis
 import cv2
 import os
 import sys
-import numpy as np
 from pathlib import Path
 
 # Add src directory to path for imports
