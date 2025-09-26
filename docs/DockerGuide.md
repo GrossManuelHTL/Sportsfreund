@@ -17,3 +17,9 @@ For changes in the backend a new migration as to be done with that. This only ha
 
 If you are not sure of the current state of your local db, update it with the migrationfiles wich is done by the following command
 ``python manage.py migrate``
+
+Btw to start the project you type
+``python manage.py runserver``
+
+superuser: admin
+password: 1234
