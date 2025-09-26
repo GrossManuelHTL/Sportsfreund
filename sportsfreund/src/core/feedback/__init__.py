@@ -1,7 +1,5 @@
-# python
-# Datei: `sportsfreund/src/core/feedback/__init__.py`
-from .handler import FeedbackHandler
-from .models.feedback import FeedbackItem, FeedbackType
+from core.feedback.handler import FeedbackHandler
+from core.feedback.errorchecker import ErrorChecker
+from models.feedback import FeedbackItem, FeedbackType
 
-__all__ = ["FeedbackHandler", "FeedbackItem", "FeedbackType"]
-
+__all__ = ["FeedbackHandler", "ErrorChecker", "FeedbackItem", "FeedbackType"]

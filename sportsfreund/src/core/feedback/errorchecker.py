@@ -1,8 +1,8 @@
 import time
 from typing import Dict, List, Any, Callable, Optional
 
-from . import FeedbackHandler
-from ...models.feedback import FeedbackType, FeedbackItem
+from core.feedback.handler import FeedbackHandler
+from models.feedback import FeedbackType, FeedbackItem
 from collections import deque, defaultdict
 from statistics import mean
 
@@ -296,4 +296,3 @@ class ErrorChecker:
         self.reps = []
         self.sets = []
         self.error_counts_total = defaultdict(int)
-
