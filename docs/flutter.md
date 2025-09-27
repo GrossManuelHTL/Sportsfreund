@@ -1,0 +1,1 @@
+https://docs.flutter.dev/install/with-vs-code <--- Important
